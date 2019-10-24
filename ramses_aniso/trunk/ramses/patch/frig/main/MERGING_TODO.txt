@@ -1,0 +1,23 @@
+TODO:
+- Clean up cooling function stuff into one file
+- Sanitise the different feedback modules (e.g. feedback_module.f90)
+--> Use stellar particles for everything but allow to place by hand or on sinks
+--> Tidy up namelist implementation (have init file???)
+
+NOTES:
+- output_makefile and output_patch are still disabled - re-enable?
+
+FILES TO CHECK:
+   560 cooling_module_ph.f90 - REFACTOR FOR COOLING
+   954 feedback_module.f90 - REFACTOR FOR FEEDBACK
+   316 read_params.f90 - REMOVE read_feedback_params WHEN PROPERLY REFACTORED
+   938 rt_cooling_module.f90 - REMOVE ZSOLAR HACK, USE ZAVE
+   156 rt_cooling_module_ph.f90 - REFACTOR FOR COOLING
+   578 rt_init.f90 - REFACTOR FOR FEEDBACK
+   658 sink_feedback.f90 - REFACTOR/FIX (THIS IS A VERY OLD VERSION!)
+  3763 sink_particle.f90 - REFACTOR TO REMOVE MOST CHANGES ???
+   581 sink_RT_feedback.f90 - REFACTOR FOR FEEDBACK
+   305 sink_wind_feedback.f90 - REFACTOR FOR FEEDBACK / ACTUALLY FINISH
+   362 stellar_particle.f90 - REFACTOR FOR FEEDBACK ???
+   461 velocity_fine_ph.f90 - RENAME
+   162 write_cool.f90 - CHECK TO SEE IF WE REALLY NEED THIS

@@ -1,0 +1,86 @@
+B0;95;c\This namelist contains various input parameters for RAMSES runs
+
+&RUN_PARAMS
+hydro=.true.
+nrestart=0
+ncontrol=1
+verbose=.false.
+/
+
+&AMR_PARAMS
+levelmin=5
+levelmax=5
+ngridmax=200000
+nexpand=20*4
+boxlen=40.0
+/
+
+! Forced driven turbulence
+&TURB_PARAMS
+turb=.true.
+turb_type=1
+turb_seed=1
+comp_frac=0.5
+! 0.5 Myr autocorrelation time
+turb_T=0.00797972
+turb_Ndt=100
+turb_rms=18000.0
+turb_min_rho=0.01
+/
+
+&INIT_PARAMS
+nregion=1
+region_type(1)='square'
+x_center=20.0
+y_center=20.0
+z_center=20.0
+exp_region=10.0
+length_x=40.0
+length_y=40.0
+length_z=40.0
+d_region=2.0
+p_region=360000.0
+prad_region=360000d-1
+a_region=3.14
+/
+
+&OUTPUT_PARAMS
+foutput=100
+tend=3d5 ! 1.2767552
+delta_tout=0.0398986
+! 2.5 Myr outputs
+! 1 Myr = 0.01595944
+! 80 Myr end time
+/
+
+! Uses 'positivity_type=2' and 'pressure_fix=.true.'
+! to avoid crashes due to negative densities
+&HYDRO_PARAMS
+gamma=1.666667
+courant_factor=0.8
+slope_type=3
+positivity_type=2
+scheme='muscl'
+riemann='hlld'
+pressure_fix=.true.
+beta_fix=0.5
+/
+
+&PHYSICS_PARAMS
+cooling=.true.
+T2_star=10.
+isotrope_cond=.false.
+cr_diffusion=.true.
+alfven_diff_coeff=.true.
+Dcr=1.d28
+epsilon_diff=1.d-4
+fix_temp_diff=.true.
+/
+
+! Interpolates on primitive variables to avoid crashes due to
+! negative quantities...
+&REFINE_PARAMS
+interpol_var=1
+interpol_type=1
+/
+
