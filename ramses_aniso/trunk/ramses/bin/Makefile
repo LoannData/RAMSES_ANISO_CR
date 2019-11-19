@@ -9,7 +9,7 @@ NCR = 1
 NENER = 0+$(NCR)
 NVAR = 8+$(NENER)
 SOLVER = mhd
-PATCH =../patch/cr/retro_diffusion :../patch/cr/turb
+PATCH =../patch/cr/retro_diffusion_dynamic :../patch/cr/turb
 EXEC = ramses
 #############################################################################
 GITBRANCH = $(shell git rev-parse --abbrev-ref HEAD)
