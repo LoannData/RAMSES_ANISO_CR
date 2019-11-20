@@ -5,7 +5,7 @@
 NVECTOR = 32
 NDIM = 3
 NPRE = 8
-NCR = 1
+NCR = 0
 NENER = 0+$(NCR)
 NVAR = 8+$(NENER)
 SOLVER = mhd
@@ -93,7 +93,7 @@ VPATH = $(PATCH):../cr:../conduction:../$(SOLVER):../aton:../hydro:../pm:../pois
 # All objects
 MODOBJ = amr_parameters.o amr_commons.o random.o pm_parameters.o pm_commons.o poisson_parameters.o \
          poisson_commons.o hydro_parameters.o hydro_commons.o cooling_module.o bisection.o sparse_mat.o \
-         clfind_commons.o gadgetreadfile.o write_makefile.o write_patch.o #write_gitinfo.o
+         clfind_commons.o gadgetreadfile.o write_makefile.o #write_patch.o #write_gitinfo.o
 
 AMROBJ = read_params.o init_amr.o init_time.o init_refine.o adaptive_loop.o amr_step.o update_time.o \
          output_amr.o flag_utils.o physical_boundaries.o virtual_boundaries.o refine_utils.o nbors_utils.o \
