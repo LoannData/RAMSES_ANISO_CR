@@ -85,6 +85,10 @@ module amr_parameters
   logical::streaming_heating=.false.   ! CR streaming heating term
   real(dp)::Dmax=1d30            ! Maximum allowed CR streaming diffusion coefficient in cgs
   real(dp)::nlength_str=1d30     ! Maximum number of cell sizes for CR streaming diffusion length scale
+  real(dp)::tau_SNR=2413680.0     ! SNRs explosion rate in the galaxy (3 SNR/100 yr by default) in time code units 
+  real(dp)::V_galaxy=2.1d11      ! Volume of the galaxy (in pc)
+  real(dp)::T_start_SN = 0.42    ! Time at which SNs can start to explode (in time code unit, defaut value >= 2 tcross ~ 34 Myr)
+  logical::dynamic_CR_injection=.false. ! CR dynamic injection through random SNRs explosion module 
 
 
   ! Mesh parameters

@@ -112,6 +112,7 @@ subroutine set_uold(ilevel)
   use amr_commons
   use hydro_commons
   use poisson_commons
+  use amr_parameters, only:tau_SNR, V_galaxy, dynamic_CR_injection, T_start_SN
   implicit none
   integer::ilevel
   !--------------------------------------------------------------------------
@@ -123,7 +124,8 @@ subroutine set_uold(ilevel)
   real(dp)::e_mag,e_kin,e_cons,e_prim,e_trunc,div,dx,fact,d_old
 
   ! Mes variables (pour l'apparition de SNRs)
-  real(dp)::tau_SNR, V_galaxy, V_simu
+  !real(dp)::tau_SNR, V_galaxy, V_simu
+  real(dp)::V_simu
   real(dp)::P_occur, X_occur, loc_numb
 
   real(dp)::rx, ry, rz
@@ -133,14 +135,44 @@ subroutine set_uold(ilevel)
   real(dp),dimension(1:3)::rxx, ryy, rzz,r_center
   integer::ix,iy,iz
 
+
+
+
+  if(numbtot(1,ilevel)==0)return
+  if(verbose)write(*,111)ilevel
+
+  nx_loc=icoarse_max-icoarse_min+1
+  scale=boxlen/dble(nx_loc)
+  dx=0.5d0**ilevel*scale
+
+  ! Add gravity source terms to unew
+  if(poisson)then
+     call add_gravity_source_terms(ilevel)
+  end if
+
+  ! Add non conservative pdV terms to unew 
+  ! for thermal and/or non-thermal energies
+  if(pressure_fix.OR.nener>0)then
+     call add_pdv_source_terms(ilevel)
+  endif
+
+  !write (*,*) "TIME == ",t
+  !---------------------------------------------------
+  if (dynamic_CR_injection .and. T_start_SN <= t) then
+  !========================
   CALL RANDOM_NUMBER(loc_numb)
 
-  tau_SNR = 1
-  V_galaxy = 1
-  V_simu = 1
+  !tau_SNR = 1
+  !V_galaxy = 1
+  V_simu = boxlen**3
   P_occur = tau_SNR*(V_simu/V_galaxy)*dtnew(ilevel)
-  !X_occur = 1 - P_occur
-  X_occur = 0.
+  write (*,*) "PROBABILITY OCCURENCE SN = ",P_occur
+  !write (*,*) "tau_snr*dt = ",tau_SNR*dtnew(ilevel)
+  if (P_occur < 1.) then
+   X_occur = 1 - P_occur
+  else 
+   X_occur = 0.
+  endif 
 
   !write(*,*) "RANDOM = ",loc_numb
 
@@ -178,27 +210,6 @@ subroutine set_uold(ilevel)
   !r_center(2) = 0.5
   !r_center(3) = 0.5 
 
-
-  if(numbtot(1,ilevel)==0)return
-  if(verbose)write(*,111)ilevel
-
-  nx_loc=icoarse_max-icoarse_min+1
-  scale=boxlen/dble(nx_loc)
-  dx=0.5d0**ilevel*scale
-
-  ! Add gravity source terms to unew
-  if(poisson)then
-     call add_gravity_source_terms(ilevel)
-  end if
-
-  ! Add non conservative pdV terms to unew 
-  ! for thermal and/or non-thermal energies
-  if(pressure_fix.OR.nener>0)then
-     call add_pdv_source_terms(ilevel)
-  endif
-
-  !---------------------------------------------------
-
   !if (qqchose...)
   !write(*,*) "abs(loc_numb) = ",abs(loc_numb), "X_occur = ",X_occur
   if (abs(loc_numb) > X_occur) then 
@@ -214,7 +225,8 @@ subroutine set_uold(ilevel)
          enddo
       enddo
   end if
-  !endif 
+  !=======================
+  endif 
   !----------------------------------------------------
 
   ! Set uold to unew for myid cells
@@ -352,8 +364,8 @@ subroutine add_snr_cr(ilevel, r_center)
    real(dp),dimension(1:3)::skip_loc
    integer::ix,iy,iz
  
-   Pcr_0 = 360000.0
-   Rsnr  = 0.2
+   Pcr_0 = 360000.0d2   ! ~ 1e-13 erg/cm^3 
+   Rsnr  = 0.1          ! ~ 20 pc for a 200 pc simulation box 
 
    !write(*,*) "r_center(1) = ",r_center(1), "r_center(2) = ",r_center(2), "r_center(3) = ",r_center(3)
 
