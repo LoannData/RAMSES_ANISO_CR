@@ -114,6 +114,9 @@ subroutine set_uold(ilevel)
   use poisson_commons
   use amr_parameters, only:tau_SNR, V_galaxy, dynamic_CR_injection, T_start_SN
   implicit none
+#ifndef WITHOUTMPI
+  include 'mpif.h'
+#endif
   integer::ilevel
   !--------------------------------------------------------------------------
   ! This routine sets array uold to its new value unew after the
@@ -133,7 +136,7 @@ subroutine set_uold(ilevel)
   real(dp)::ry_left, ry_center, ry_right
   real(dp)::rz_left, rz_center, rz_right
   real(dp),dimension(1:3)::rxx, ryy, rzz,r_center
-  integer::ix,iy,iz
+  integer::ix,iy,iz,ierr
 
 
 
@@ -160,32 +163,43 @@ subroutine set_uold(ilevel)
   !---------------------------------------------------
   if (dynamic_CR_injection .and. T_start_SN <= t) then
   !========================
-  CALL RANDOM_NUMBER(loc_numb)
+     loc_numb=0
 
-  !tau_SNR = 1
-  !V_galaxy = 1
-  V_simu = boxlen**3
-  P_occur = tau_SNR*(V_simu/V_galaxy)*dtnew(ilevel)
-  write (*,*) "PROBABILITY OCCURENCE SN = ",P_occur
-  !write (*,*) "tau_snr*dt = ",tau_SNR*dtnew(ilevel)
-  if (P_occur < 1.) then
-   X_occur = 1 - P_occur
-  else 
-   X_occur = 0.
-  endif 
-
-  !write(*,*) "RANDOM = ",loc_numb
-
-  ! r_center values ... 
-
-  CALL RANDOM_NUMBER(rx)
-  CALL RANDOM_NUMBER(ry)
-  CALL RANDOM_NUMBER(rz)
-  !rx = 0.9
-  !ry = 0.5
-  !rz = 0.9
-
-
+     if(myid==1)then
+        CALL RANDOM_NUMBER(loc_numb)
+        
+        !write(*,*) "RANDOM = ",loc_numb
+        
+        ! r_center values ...         
+        CALL RANDOM_NUMBER(rx)
+        CALL RANDOM_NUMBER(ry)
+        CALL RANDOM_NUMBER(rz)
+     endif
+        !rx = 0.9
+        !ry = 0.5
+        !rz = 0.9
+#ifndef WITHOUTMPI
+     call MPI_BCAST(loc_numb,1, MPI_DOUBLE_PRECISION, 0, &
+                     & MPI_COMM_WORLD, ierr)
+     call MPI_BCAST(rx      ,1, MPI_DOUBLE_PRECISION, 0, &
+                     & MPI_COMM_WORLD, ierr)
+     call MPI_BCAST(ry      ,1, MPI_DOUBLE_PRECISION, 0, &
+                     & MPI_COMM_WORLD, ierr)
+     call MPI_BCAST(rz      ,1, MPI_DOUBLE_PRECISION, 0, &
+                     & MPI_COMM_WORLD, ierr)
+#endif
+     !tau_SNR = 1
+     !V_galaxy = 1
+     V_simu = boxlen**3
+     P_occur = tau_SNR*(V_simu/V_galaxy)*dtnew(ilevel)
+     if(myid==1)write (*,*) "PROBABILITY OCCURENCE SN = ",P_occur
+     !write (*,*) "tau_snr*dt = ",tau_SNR*dtnew(ilevel)
+     if (P_occur < 1.) then
+        X_occur = 1 - P_occur
+     else 
+        X_occur = 0.
+     endif
+        
   rx_left   = rx - 1.
   rx_center = rx
   rx_right  = rx +1.

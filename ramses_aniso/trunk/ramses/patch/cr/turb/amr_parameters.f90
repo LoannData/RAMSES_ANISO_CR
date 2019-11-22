@@ -64,13 +64,29 @@ module amr_parameters
   logical::lightcone=.false.  ! Enable lightcone generation
   logical::clumpfind=.false.  ! Enable clump finder
   logical::aton=.false.       ! Enable ATON coarse grid radiation transfer
-  logical::conduction  =.false.  ! Heat diffusion module activated
-  logical::coupling    =.false.   ! Couple the two temperatures (must activate conduction to work)
-  logical::coupling_out_of_conduction=.false. ! Couple the two temperatures out of the conduction routine
+  logical::conduction  =.false.  ! Conduction module activated
+  logical::conduction_ion=.false.! Conduction of ions activated
+  logical::isotrope_cond=.false. ! Activate isotropic conduction instead of anisotropic
+  logical::semi_implicit=.false. ! Semi-implicit integrator for anisotropic conduction (DOES NOT WORK)
+  logical::coupling    =.false.  ! Couple the two temperatures within the conduction module (old feature)
+  logical::coupling_out_of_conduction=.false. ! Couple the two temperatures outside the conduction module
+  logical::saturation=.true.     ! Saturation of the heat flux for large mean free path
   logical::cr_diffusion=.false.  ! Cosmic ray diffusion module activated
-  logical::fix_temp_diff=.false. ! Cosmic ray diffusion temperature fix
+  logical::fix_temp_diff=.false.  ! Cosmic ray diffusion and temperature conduction fix
   logical::twotemp     =.false.  ! Two-temperatures (Te,Ti) model for conduction
+  real(dp)::Tfloor=1.d0          ! Temperature floor for conduction temperature fix in K
+  real(dp)::TCRmax=-1.d0         ! Maximum CR Temperature for CR diffusion step in K
+  real(dp)::TCRmin=-1.d0         ! Minimum CR Temperature for CR diffusion step in K
+  real(dp)::RelVar=0.1d0         ! Relative temperature variation criterion for 2 Temp. coupling
+  logical ::cooling_cr=.false.   ! Radiative losses as in Booth+13
   logical::alfven_diff_coeff=.false. ! CR diffusion coeffcient dependant on the Alfvenic Mach number
+  logical::variable_diff_coeff=.true. ! CR diffusion coeffcient dependant on the CR energy gradient (set to true!)
+  logical::streaming_diffusion=.false. ! CR streaming treated as a diffusion term
+  logical::streaming_heating=.false.   ! CR streaming heating term
+  real(dp)::Dmax=1d30            ! Maximum allowed CR streaming diffusion coefficient in cgs
+  real(dp)::nlength_str=1d30     ! Maximum number of cell sizes for CR streaming diffusion length scale
+  real(dp)::DCRmax=1d30          ! Maximum allowed CR streaming diffusion coefficient in cgs
+
 
   ! Mesh parameters
   integer::geom=1             ! 1: cartesian, 2: cylindrical, 3: spherical
@@ -158,9 +174,13 @@ module amr_parameters
   real(dp)::ir_eff=0.75       ! efficiency of the IR feedback (only when ir_feedback=.true.)
   real(dp)::sf_trelax=0.0D0  ! Relaxation time for star formation (cosmo=.false. only)
   integer::sf_model=3         ! Virial star formation model
+  real(dp)::dtc12,dtc23,dtc34,dtcneig,dtcfath
   logical ::low_density_isothermal=.false. ! Set low density gas to T2_star?
   real(dp)::low_density_threshold=0.0      ! Density threshold for cooling  
-  logical ::reset_isothermal=.false.       ! Set all gas to T2_star on restart?    
+  logical ::reset_isothermal=.false.       ! Set all gas to T2_star on restart?   
+  real(dp)::floor_prad=0.0D0 ! ------------------------------------------------------- Loann
+  real(dp)::floor_var=0.0D0 !-----------------------------------------------------------Loann
+
   logical ::self_shielding=.false.
   logical ::pressure_fix=.false.
   logical ::nordlund_fix=.true.
@@ -173,10 +193,11 @@ module amr_parameters
   logical ::smbh=.false.
   logical ::agn=.false.
   logical ::use_proper_time=.false.
-  logical::convert_birth_times=.false. ! Convert stellar birthtimes: conformal -> proper
+  logical ::convert_birth_times=.false. ! Convert stellar birthtimes: conformal -> proper
   logical ::ir_feedback=.false. ! Activate ir feedback from accreting sinks
+  logical ::frozen=.false.
   logical ::slopelim_cond=.false. ! TODO for the asymetric scheme
-  logical ::isotrope_cond=.false. ! Activate isotropic conduction
+  !logical ::isotrope_cond=.false. ! Activate isotropic conduction
   logical ::sf_virial=.false.   ! Activate SF Virial criterion
   logical ::sf_birth_properties=.false. ! Output birth properties of stars
 
