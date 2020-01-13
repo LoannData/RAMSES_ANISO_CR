@@ -205,6 +205,7 @@ subroutine crdiffusion_cg (ilevel,Nsub)
      error_cg_loc=1.0d0
 
 if(dener>1)then
+     !error = 0.1*error_ini ! ---------------------------------------------------------------------------------------------------------------- 
      do while(error/error_ini>epsilon_diff .and.iter<itermax)
 
         iter=iter+1

@@ -76,7 +76,7 @@ subroutine read_hydro_params(nml_ok)
        & ,M0,r_length,testcase,fix_temp_diff,Dcr,saturation,coupling,epsilon_diff,coupling_out_of_conduction &
        & ,semi_implicit,frozen,alfven_diff_coeff,flinj,Tfloor,RelVar,TCRmax,TCRmin &
        & ,streaming_diffusion,streaming_heating,Dmax,nlength_str,variable_diff_coeff & 
-       & ,cooling_cr,dynamic_CR_injection,V_galaxy,tau_SNR,T_start_SN 
+       & ,cooling_cr,dynamic_CR_injection,V_galaxy,tau_SNR,T_start_SN, cr_source_pressure, box_relative_radius_snr 
   
   ! Read namelist file
   rewind(1)

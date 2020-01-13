@@ -89,6 +89,8 @@ module amr_parameters
   real(dp)::V_galaxy=2.1d11      ! Volume of the galaxy (in pc)
   real(dp)::T_start_SN = 0.42    ! Time at which SNs can start to explode (in time code unit, defaut value >= 2 tcross ~ 34 Myr)
   logical::dynamic_CR_injection=.false. ! CR dynamic injection through random SNRs explosion module 
+  real(dp)::cr_source_pressure = 360000.0d2   ! CR Source pressure ~ 1e-13 erg/cm^3
+  real(dp)::box_relative_radius_snr = 0.1 ! Radius of the CR sources in % of the box size ~ 20 pc for a 200 pc simulation box
 
 
   ! Mesh parameters

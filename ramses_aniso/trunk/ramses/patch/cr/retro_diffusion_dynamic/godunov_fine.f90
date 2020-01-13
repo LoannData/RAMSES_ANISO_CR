@@ -346,6 +346,7 @@ end subroutine add_gravity_source_terms
 subroutine add_snr_cr(ilevel, r_center)
    use amr_commons
    use hydro_commons
+   use amr_parameters
    implicit none
    integer::ilevel
    !---------------------------------------------------------
@@ -378,8 +379,8 @@ subroutine add_snr_cr(ilevel, r_center)
    real(dp),dimension(1:3)::skip_loc
    integer::ix,iy,iz
  
-   Pcr_0 = 360000.0d2   ! ~ 1e-13 erg/cm^3 
-   Rsnr  = 0.1          ! ~ 20 pc for a 200 pc simulation box 
+   Pcr_0 = cr_source_pressure   ! ~ 1e-13 erg/cm^3 
+   Rsnr  = box_relative_radius_snr  ! ~ 20 pc for a 200 pc simulation box 
 
    !write(*,*) "r_center(1) = ",r_center(1), "r_center(2) = ",r_center(2), "r_center(3) = ",r_center(3)
 

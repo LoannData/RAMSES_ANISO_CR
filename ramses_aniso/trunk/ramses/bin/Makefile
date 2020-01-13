@@ -9,7 +9,7 @@ NCR = 1
 NENER = 0+$(NCR)
 NVAR = 8+$(NENER)
 SOLVER = mhd
-PATCH =../patch/cr/retro_diffusion_dynamic :../patch/cr/turb
+PATCH =../patch/cr/retro_diffusion_dynamic :../patch/cr/turb: ../patch/mhd/cr_bicg
 EXEC = ramses
 #############################################################################
 GITBRANCH = $(shell git rev-parse --abbrev-ref HEAD)
@@ -21,8 +21,8 @@ DEFINES = -DNVECTOR=$(NVECTOR) -DNDIM=$(NDIM) -DNPRE=$(NPRE) -DNENER=$(NENER) -D
 # Fortran compiler options and directives
 
 # --- No MPI, gfortran -------------------------------
-#F90 = gfortran -O3 -frecord-marker=4 -fbacktrace -ffree-line-length-none -g
-#FFLAGS = -x f95-cpp-input $(DEFINES) -DWITHOUTMPI
+F90 = gfortran -O3 -frecord-marker=4 -fbacktrace -ffree-line-length-none -g
+FFLAGS = -x f95-cpp-input $(DEFINES) -DWITHOUTMPI
 
 # --- No MPI, tau ----------------------------------
 #F90 = tau_f90.sh -optKeepFiles -optPreProcess -optCPPOpts=$(DEFINES) -DWITHOUTMPI
@@ -44,8 +44,8 @@ DEFINES = -DNVECTOR=$(NVECTOR) -DNDIM=$(NDIM) -DNPRE=$(NPRE) -DNENER=$(NENER) -D
 #FFLAGS = -cpp $(DEFINES) -DWITHOUTMPI
 
 # --- MPI, gfortran syntax ------------------------------
-F90 = mpif90 -frecord-marker=4 -O3 -ffree-line-length-none -g -fbacktrace 
-FFLAGS = -x f95-cpp-input $(DEFINES)
+#F90 = mpif90 -frecord-marker=4 -O3 -ffree-line-length-none -g -fbacktrace 
+#FFLAGS = -x f95-cpp-input $(DEFINES)
 
 # --- MPI, gfortran DEBUG syntax ------------------------------ 
 #F90 = mpif90 -frecord-marker=4 -ffree-line-length-none -fbacktrace -g -O -fbounds-check -Wuninitialized -Wall
