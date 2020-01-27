@@ -9,7 +9,8 @@ NCR = 1
 NENER = 0+$(NCR)
 NVAR = 8+$(NENER)
 SOLVER = mhd
-PATCH =../patch/cr/retro_diffusion_dynamic :../patch/cr/turb: ../patch/mhd/cr_bicg
+PATCH =../patch/cr/retro_diffusion_dynamic :../patch/cr/turb: ../patch/mhd/cr_bicg    # With turbulence module
+#PATCH =../patch/cr/retro_diffusion_dynamic :../patch/mhd/cr_bicg     # Without turbulence module
 EXEC = ramses
 #############################################################################
 GITBRANCH = $(shell git rev-parse --abbrev-ref HEAD)
