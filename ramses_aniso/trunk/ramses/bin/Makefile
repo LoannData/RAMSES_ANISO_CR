@@ -9,7 +9,7 @@ NCR = 1
 NENER = 0+$(NCR)
 NVAR = 8+$(NENER)
 SOLVER = mhd
-PATCH =../patch/cr/retro_diffusion_dynamic :../patch/cr/turb: ../patch/mhd/cr_bicg    # With turbulence module
+PATCH =../patch/cr/retro_diffusion_dynamic2: ../patch/cr/turb    # With turbulence module
 #PATCH =../patch/cr/retro_diffusion_dynamic :../patch/mhd/cr_bicg     # Without turbulence module
 EXEC = ramses
 #############################################################################
@@ -22,8 +22,8 @@ DEFINES = -DNVECTOR=$(NVECTOR) -DNDIM=$(NDIM) -DNPRE=$(NPRE) -DNENER=$(NENER) -D
 # Fortran compiler options and directives
 
 # --- No MPI, gfortran -------------------------------
-F90 = gfortran -O3 -frecord-marker=4 -fbacktrace -ffree-line-length-none -g
-FFLAGS = -x f95-cpp-input $(DEFINES) -DWITHOUTMPI
+#F90 = gfortran -O3 -frecord-marker=4 -fbacktrace -ffree-line-length-none -g 
+#FFLAGS = -x f95-cpp-input $(DEFINES) -DWITHOUTMPI 
 
 # --- No MPI, tau ----------------------------------
 #F90 = tau_f90.sh -optKeepFiles -optPreProcess -optCPPOpts=$(DEFINES) -DWITHOUTMPI
@@ -42,11 +42,11 @@ FFLAGS = -x f95-cpp-input $(DEFINES) -DWITHOUTMPI
 
 # --- No MPI, ifort ----------------------------------
 #F90 = /home/lbrahimi/intel/compilers_and_libraries_2019.4.243/linux/bin/intel64/ifort
-#FFLAGS = -cpp $(DEFINES) -DWITHOUTMPI
+#FFLAGS = -cpp $(DEFINES) -DWITHOUTMPI -fpe0 -traceback -O0
 
 # --- MPI, gfortran syntax ------------------------------
-#F90 = mpif90 -frecord-marker=4 -O3 -ffree-line-length-none -g -fbacktrace 
-#FFLAGS = -x f95-cpp-input $(DEFINES)
+F90 = mpif90 -frecord-marker=4 -O3 -ffree-line-length-none -g -fbacktrace 
+FFLAGS = -x f95-cpp-input $(DEFINES)
 
 # --- MPI, gfortran DEBUG syntax ------------------------------ 
 #F90 = mpif90 -frecord-marker=4 -ffree-line-length-none -fbacktrace -g -O -fbounds-check -Wuninitialized -Wall
@@ -89,12 +89,12 @@ LIBGRACKLE = -lgrackle -lhdf5 -lz
 LIBS = $(LIBMPI)
 #############################################################################
 # Sources directories are searched in this exact order
-VPATH = $(PATCH):../cr:../conduction:../$(SOLVER):../aton:../hydro:../pm:../poisson:../amr
+VPATH = $(PATCH):../cr:../mhd:../conduction:../$(SOLVER):../aton:../hydro:../pm:../poisson:../amr
 #############################################################################
 # All objects
 MODOBJ = amr_parameters.o amr_commons.o random.o pm_parameters.o pm_commons.o poisson_parameters.o \
          poisson_commons.o hydro_parameters.o hydro_commons.o cooling_module.o bisection.o sparse_mat.o \
-         clfind_commons.o gadgetreadfile.o write_makefile.o write_patch.o #write_gitinfo.o
+         clfind_commons.o gadgetreadfile.o write_makefile.o #write_patch.o #write_gitinfo.o
 
 AMROBJ = read_params.o init_amr.o init_time.o init_refine.o adaptive_loop.o amr_step.o update_time.o \
          output_amr.o flag_utils.o physical_boundaries.o virtual_boundaries.o refine_utils.o nbors_utils.o \

@@ -1,0 +1,339 @@
+! -------------- Subroutines for the calculation of the sub-resolution diffusion coefficient ----------------
+!###########################################################
+!###########################################################
+!###########################################################
+!###########################################################
+subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
+   
+   use cooling_module,only :clight
+   implicit none
+   
+   ! - Some constants ---------------------------------------
+   real::mp, e, GeV, pi 
+   integer, parameter :: dp = selected_real_kind(15, 307)
+   
+   ! - Variables for NN interpolation -----------------------
+   integer::k, n, kvalues  
+   real(dp)::X_test, Y_test, rho_test, T_test, k_reel
+   real(dp)::calc_value1, calc_value2, calc_value3, betacr 
+   real(dp),dimension(1:5)::mi,ni,mn,nn,Xion,T,rho
+   real(dp),dimension(1:5)::X_train, Y_train, distance  
+   real(dp),dimension(1:5):: f_value1, f_value2, f_value3
+   real(dp),dimension(1:3)::dist_k, x_k, y_k, val1, val2, val3
+   
+   ! - Variables from RAMSES-ISM ----------------------------
+   real(dp)::rho_sim, T_sim, B0_sim, gradPcr
+   real(dp)::ECR_sim
+   ! - Variables for RAMSES-ISM -----------------------------
+   real(dp)::Gamma_in,rho_i,rho_n,rmi,rmn,chi,rXion,xi_n,rnn,rni,rg
+   real(dp)::nuin,Va,Vai,Va_temp, Va_final,Turb
+   parameter(k_reel = selected_real_kind(6,90))
+   real(dp),intent(out)::kpara,kperp
+   real(dp)::scale_l,scale_t,scale_d,scale_v,scale_nH,scale_T2,scale_omega,scale_tau,scale_kappa,scale_n,scale_m
+   
+   call units(scale_l,scale_t,scale_d,scale_v,scale_nH,scale_T2)
+   scale_kappa = scale_l**2/scale_t
+   scale_m = scale_d*scale_l**3
+   !write(*,*) "scale_l = ",scale_l
+   scale_n = scale_l**3
+   
+   ! - Some constants 
+   mp = 1.6726d-24 ! Proton mass [g]
+   e = 4.80326d-10 ! Electron charge [statcoulomb]
+   GeV = 0.00160218 ! GeV in Erg
+   pi = acos(-1.0d0)
+   
+   rho_sim = rho_sim * scale_d
+   gradPcr = gradPcr * scale_d*scale_v**2/scale_l
+   
+   !if (gradPcr .ne. 0.) then 
+   !    write(*,*) "gradPcr = ",gradPcr," erg/cm^3"
+   !endif
+   
+   
+   !write(*,*) "Bnorm_inside_before = ",B0_sim
+   B0_sim  = B0_sim  * sqrt(4.*pi*scale_d*scale_v**2 )
+   !write(*,*) "pi = ",pi," scale_d = ",scale_d," scale_v = ",scale_v
+   !write(*,*) "Bnorm_inside_after = ",B0_sim
+   
+   !write(*,*) "In : ",T_sim
+   
+   
+   
+   ! - kNN interpolation algorithm parameters ----------------
+   k = 5  ! Number of nearest neighbors 
+   n = 20 ! Distance ponderation parameter 
+   
+   ! - Variables from RAMSES-ISM ----------------------------
+   !!$rho_sim = 1.d-21 ! g.cm^-3 
+   !!$T_sim   = 50.    ! Kelvin
+   !!$B0_sim = 10.d-6   ! Gauss 
+   ECR_sim = 1.*GeV ! Erg     
+   !!$gradPcr = 1d-29  ! Erg/cm^4
+   
+   ! - Observationnal and simulation values ------------------
+   T    = [  8000.,     50.,     50.,     30.,     20.]
+   mi   = [ 1.0*mp, 12.0*mp, 12.0*mp, 29.0*mp, 29.0*mp]
+   mn   = [1.21*mp, 1.21*mp, 1.67*mp, 2.12*mp, 2.12*mp]
+   ni   = [  0.007,  2.4e-2,    0.03,    3e-2,    0.01]
+   Xion = [   0.02,    8e-4,    1e-4,    1e-5,    1e-6]
+   
+   do kvalues=1,5
+       rho(kvalues) = (mi(kvalues)*ni(kvalues) + mn(kvalues)*ni(kvalues)*(Xion(kvalues)**(-1) - 1.))
+       X_train(kvalues) = log10(T(kvalues))
+       Y_train(kvalues) = log10(rho(kvalues))
+   end do 
+   
+   X_test = log10(T_sim)
+   Y_test = log10(rho_sim)
+   
+   ! - Algorithm ---------------------------------------------
+   do kvalues=1,5
+       f_value1(kvalues) = log10(Xion(kvalues))
+       f_value2(kvalues) = mn(kvalues)
+       f_value3(kvalues) = mi(kvalues)
+       write(*,*) "log10(Xion) = ",f_value1(kvalues)
+       write(*,*) "mn = ",f_value2(kvalues)
+       write(*,*) "mi = ",f_value3(kvalues)
+   end do 
+   
+   write(*,*) "Xtrain[1] = ",X_train(1)
+   write(*,*) "Xtrain[2] = ",X_train(2)
+   write(*,*) "Xtrain[3] = ",X_train(3)
+   write(*,*) "Xtrain[4] = ",X_train(4)
+   write(*,*) "Xtrain[5] = ",X_train(5)
+   write(*,*) "Ytrain[1] = ",Y_train(1)
+   write(*,*) "Ytrain[2] = ",Y_train(2)
+   write(*,*) "Ytrain[3] = ",Y_train(3)
+   write(*,*) "Ytrain[4] = ",Y_train(4)
+   write(*,*) "Ytrain[5] = ",Y_train(5)
+   write(*,*) "distance[1] = ",distance(1)
+   write(*,*) "distance[2] = ",distance(2)
+   write(*,*) "distance[3] = ",distance(3)
+   write(*,*) "distance[4] = ",distance(4)
+   write(*,*) "distance[5] = ",distance(5)
+   write(*,*) "X_test = ",X_test
+   write(*,*) "T_test = ",Y_test
+   write(*,*) "k = ",k
+   write(*,*) "n = ",n 
+
+   !write(*,*) X_test
+   call getValue_linear(X_train, Y_train, distance, f_value1, f_value2, f_value3, X_test, Y_test, k , dist_k, x_k, y_k, val1, val2, val3, n, calc_value1, calc_value2, calc_value3)
+   !write(*,*) X_test
+   rXion = 10.**(calc_value1) ! From log axis to lin axis 
+   rmn = calc_value2
+   rmi = calc_value3
+
+   write(*,*) "-----------------------------"
+   write(*,*) "rXion = ",rXion
+   write(*,*) "rmn = ",rmn 
+   write(*,*) "rmi = ",rmi
+   
+   !write(*,*) rXion, rmn/mp, rmi/mp
+   
+   ! - Basic calculations 
+   chi   = (rmn/rmi)*(rXion**(-1) - 1.) 
+   !write(*,*) "chi = ",chi,"- rmn = ",rmn," - rmi = ",rmi,"- rXion = ",rXion
+   rho_n = rho_sim/(1. + chi**(-1))
+   rho_i = chi**(-1)/(1. + chi**(-1))*rho_sim
+   !write(*,*) "rho_i = ",rho_i,"- chi = ",chi,"- rho_sim = ",rho_sim
+   xi_n  = 1./(1 + chi**(-1))
+   rnn   = rho_n/rmn 
+   rni   = rho_i/rmi 
+   rg    = ECR_sim/(e*B0_sim)
+   
+   !write (*,*) "ECR_sim = ",ECR_sim," e = ",e," B0_sim = ",B0_sim 
+   
+   ! - nu_in and Gamma_in calculation 
+   Gamma_in = 0.
+   nuin  = 2*rnn*8.4d-9*(T_sim/1.d4)**(0.4) 
+   Va  = B0_sim/sqrt(4.*pi*rho_sim)
+   Vai = B0_sim/sqrt(4.*pi*rho_i)
+   Va_temp = B0_sim/sqrt(4.*pi*rho_i)
+   !if (ECR_sim < e*B0_sim*Vai/nuin) then 
+   !    Gamma_in = - nuin/2. 
+   !    Va_final = Vai 
+   !end if 
+   Va_temp = B0_sim/(4.*pi*rho_sim)
+   !if (ECR_sim > e*B0*Va*chi/nuin) then 
+   !    Gamma_in = -xi_n*Va**2*e**2*B0_sim**2*ECR_sim**(-2)/(2.*chi*nuin)
+   !    Va_final = Va
+   !end if 
+   
+   Gamma_in = -nuin/2.
+   Va_final = Vai
+   
+   ! - Energy density of waves (Turbulence level)
+   Turb = abs(Va_final*abs(gradPcr)/(2.*Gamma_in)/(B0_sim**2/(8.*pi)))
+   !write(*,*) "Turb = ",Turb," Va_final = ",Va_final," gradPcr = ",gradPcr," Gamma_in = ",Gamma_in," B0_sim = ",B0_sim," pi = ",pi
+   !write(*,*) Turb
+   
+   !write(*,*) rnn, rho_n, rmn/mp
+   !write(*,*) e*B0*Va*chi/nuin/GeV, ECR_sim/GeV, e*B0_sim*Vai/nuin/GeV 
+   !write(*,*) "Va =",Va, "Vai = ",Vai, "Va_final = ",Va_final
+   
+   ! - Diffusion coefficients 
+   !write(*,*)  4.*pi*rg*clight/(3.*Turb)
+   betacr = sqrt(1 - (1/(1 + ECR_sim/(mp*clight)**2))**2)
+   kpara = 4.*pi*rg*betacr*clight/(3.*Turb) / scale_kappa
+   
+   !write(*,*) "betacr = ",betacr
+   !kperp = kpara*Turb**2
+   kperp = kpara*1.d-2 ! In order to avoid scheme divergences 
+   
+   write(*,*) "-----------------------------------------------------------------"
+   write(*,*) "Tested values : rho = ",rho_sim," g.cm^-3, T = ",T_sim," Kelvin" 
+   write(*,*) "Result : Xion = ",rXion," mi = ",rmi/mp," mp, mn = ",rmn/mp," mp" 
+   write(*,*) "chi = ",chi,", rho_n = ",rho_n," g.cm^-3, rho_i = ",rho_i," g.cm^-3" 
+   write(*,*) "Xi_n = ",xi_n,", nn = ",rnn," cm^-3, ni = ",rni," cm^-3" 
+   write(*,*) "rg = ",rg," cm, nu_in = ",nuin," s^-1, Va_final",Va_final," cm.s^-1" 
+   write(*,*) "Gamma_in = ",Gamma_in," s^-1, I(k) = ",Turb
+   write(*,*) "kpara = ",kpara*scale_kappa," cm^2.s^-1, kperp = ",kperp*scale_kappa," cm^2.s^-1" 
+   write(*,*) "-----------------------------------------------------------------"
+   
+   end subroutine subgridcr_diffusion
+   !###########################################################
+   !###########################################################
+   !###########################################################
+   !###########################################################
+   subroutine getValue_linear(X_train, Y_train, distance, value1, value2, value3, X_test, Y_test, k , dist_k, x_k, y_k, val1, val2, val3, n, calc_value1, calc_value2, calc_value3)
+       !use cooling_module
+   implicit none
+   ! - Input values -----------------------------------------
+   integer, parameter :: dp = selected_real_kind(15, 307)
+   integer::k, n 
+   real(dp),intent(in)::X_test, Y_test
+   real(dp),dimension(1:5)::X_train, Y_train, value1, value2, value3, distance 
+   real(dp),dimension(1:k)::x_k, y_k, val1, val2, val3, dist_k
+   
+   ! - Output values ----------------------------------------
+   real(dp)::calc_value1, calc_value2, calc_value3 
+   
+   ! - InCode values ----------------------------------------
+   real(dp)::distinv
+   real(dp)::temp_value1
+   real(dp)::temp_value2
+   real(dp)::temp_value3
+   integer::ivalues
+   
+   distinv = 0.0D0 
+   temp_value1 = 0.0D0
+   temp_value2 = 0.0D0
+   temp_value3 = 0.0D0 
+   
+   
+   !write(*,*) "Valeur !! : ",X_test
+   !write(*,*) "Before : ",calc_value1, calc_value2, calc_value3
+   
+   call selectKNN(X_train, Y_train, X_test, Y_test, k, value1, value2, value3, dist_k, x_k, y_k, val1, val2, val3)
+   
+   
+   
+   if (k.EQ.1) then 
+       calc_value1 = val1(1)
+       calc_value2 = val2(1)
+       calc_value3 = val3(1)
+   end if 
+   if (k > 1) then 
+       do ivalues=1,k 
+           distinv = distinv + 1./(dist_k(ivalues)**n) 
+           temp_value1 = temp_value1 + val1(ivalues)/(dist_k(ivalues)**n)
+           temp_value2 = temp_value2 + val2(ivalues)/(dist_k(ivalues)**n)
+           temp_value3 = temp_value3 + val3(ivalues)/(dist_k(ivalues)**n)
+       end do 
+   end if 
+   
+   
+   calc_value1 = temp_value1/distinv 
+   calc_value2 = temp_value2/distinv 
+   calc_value3 = temp_value3/distinv 
+   
+   !write(*,*) "After : ",calc_value1, calc_value2, calc_value3
+   
+   
+   
+   end subroutine getValue_linear 
+   !###########################################################
+   !###########################################################
+   !###########################################################
+   !###########################################################
+   subroutine selectKNN(X_train, Y_train, X_test, Y_test, k, value1, value2, value3, dist_k, x_k, y_k, val1, val2, val3) 
+       !use cooling_module
+   implicit none
+   ! - Input values ------------------------------------------
+   integer, parameter :: dp = selected_real_kind(15, 307)
+   integer::k, ivalues 
+   real(dp),dimension(1:5)::X_train, Y_train, value1, value2, value3, distance  
+   real(dp)::X_test, Y_test
+   
+   ! - Output values ----------------------------------------- 
+   real(dp),dimension(1:k)::dist_k, x_k, y_k, val1, val2, val3 
+   
+   
+   call getDistance(X_train, Y_train, X_test, Y_test, value1, value2, value3, distance)
+   
+   do ivalues=1,k 
+       dist_k(ivalues) = distance(ivalues)
+       x_k(ivalues) = X_train(ivalues)
+       y_k(ivalues) = Y_train(ivalues)
+       val1(ivalues) = value1(ivalues)
+       val2(ivalues) = value2(ivalues)
+       val3(ivalues) = value3(ivalues)
+   
+       !write(*,*) dist_k(ivalues)
+       !write(*,*) val1(ivalues), val2(ivalues), val3(ivalues)
+   end do 
+   
+   end subroutine selectKNN
+   !###########################################################
+   !###########################################################
+   !###########################################################
+   !###########################################################
+   subroutine getDistance(X_train, Y_train, X_test, Y_test, value1, value2, value3, distance) 
+       !use cooling_module
+   implicit none 
+   ! - Input values ------------------------------------------
+   integer, parameter :: dp = selected_real_kind(15, 307)
+   integer::ivalues,jvalues
+   real(dp),dimension(1:5)::X_train, Y_train, value1, value2, value3  
+   real(dp)::X_test,Y_test
+   
+   ! - Output values -----------------------------------------
+   real(dp),dimension(1:5)::distance
+   integer,dimension(1:5)::order 
+   real(dp)::buffer_value
+   
+   do ivalues = 1,5 
+       distance(ivalues) = sqrt((X_train(ivalues)-X_test)**2. + (Y_train(ivalues)-Y_test)**2.)
+       !write(*,*) ivalues," : ",distance(ivalues)
+       !write(*,*) "Tsim = ",X_test,"  Ttrain = ",X_train(ivalues)
+       !write(*,*) "rhosim = ",Y_test," rhotrain = ",Y_train(ivalues)
+       !write(*,*) distance(ivalues)
+       order(ivalues) = ivalues
+   end do
+   
+   do ivalues = 1,5
+       do jvalues = 1,5
+           if (ivalues.NE.jvalues) then 
+               if ((distance(ivalues) <= distance(jvalues)).AND.(ivalues > jvalues)) then
+   
+                   buffer_value = distance(ivalues)
+                   distance(ivalues) = distance(jvalues)
+                   distance(jvalues) = buffer_value
+   
+                   buffer_value = X_train(ivalues)
+                   X_train(ivalues) = X_train(jvalues)
+                   X_train(jvalues) = buffer_value
+   
+                   buffer_value = Y_train(ivalues)
+                   Y_train(ivalues) = Y_train(jvalues)
+                   Y_train(jvalues) = buffer_value
+   
+                   buffer_value = order(ivalues)
+                   order(ivalues) = order(jvalues)
+                   order(jvalues) = buffer_value
+               end if 
+           endif
+       end do
+   end do
+   end subroutine getDistance
