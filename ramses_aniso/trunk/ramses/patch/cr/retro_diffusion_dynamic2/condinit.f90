@@ -153,9 +153,6 @@ subroutine PcrLoann(x, Pcr, r_center, Pcr_0, Rsnr, dx, t, ncell)!(x,v,dx,t,ncell
      integer ::ncell                         ! Size of input arrays
      real(dp)::dx                            ! Cell size
      real(dp)::t                             ! Current time
-
-     !real(dp),dimension(1:nvector,1:3)::v    ! Velocity field
-
      real(dp),dimension(1:nvector,1:ndim)::x ! Cell center position.
      real(dp),dimension(1:nvector)::Pcr      ! CR Pressure field 
      real(dp),dimension(1:3)::r_center       ! Center position of the SNR
@@ -173,7 +170,6 @@ subroutine PcrLoann(x, Pcr, r_center, Pcr_0, Rsnr, dx, t, ncell)!(x,v,dx,t,ncell
 #if NDIM > 2
                zz=x(i,3)
 #endif
-          
 ! Pour le moment j'injecte un carré de RCs
 #if NDIM == 1
                if (xx >= r_center(1) - Rsnr .and. xx <= r_center(1) + Rsnr) then
@@ -182,16 +178,6 @@ subroutine PcrLoann(x, Pcr, r_center, Pcr_0, Rsnr, dx, t, ncell)!(x,v,dx,t,ncell
                     Pcr(i) = 0
                endif 
 #endif 
-
-! Injection carrée 
-!#if NDIM == 2
-!               if ((xx >= r_center(1) - Rsnr .and. xx <= r_center(1) + Rsnr) .and. (yy >= r_center(2) - Rsnr .and. yy <= r_center(2) + Rsnr)) then
-!                    Pcr(i) = Pcr_0
-!               else
-!                    Pcr(i) = 0
-!               endif 
-!#endif 
-
 ! Injection disque 
 #if NDIM == 2
                if (sqrt((r_center(1) - xx)**2 + (r_center(2) - yy)**2) <= Rsnr) then
@@ -200,22 +186,12 @@ subroutine PcrLoann(x, Pcr, r_center, Pcr_0, Rsnr, dx, t, ncell)!(x,v,dx,t,ncell
                     Pcr(i) = 0
                endif 
 #endif 
-
 #if NDIM == 3
-               !write(*,*) "xx = ",xx, " yy = ",yy, " zz = ",zz
                if (sqrt((r_center(1) - xx)**2 + (r_center(2) - yy)**2 + (r_center(3) - zz)**2) <= Rsnr) then
                     Pcr(i) = Pcr_0
                else
                     Pcr(i) = 0
                endif 
-
-               !write(*,*) "xx = ",xx, "yy = ",yy, "zz = ",zz, "rx_center = ",r_center(1), "ry_center = ",r_center(2), "rz_center = ",r_center(3), "Rsnr = ",Rsnr, "Pcr(i) = ",Pcr(i)
 #endif 
-
      end do 
-     !================================================================
-     ! This routine computes the user defined velocity fields.
-     ! x(i,1:ndim) are cell center position in [0,boxlen] (user units).
-     ! v(i,1:3) is the imposed 3-velocity in user units.
-     !================================================================
-   end subroutine PcrLoann
+end subroutine PcrLoann

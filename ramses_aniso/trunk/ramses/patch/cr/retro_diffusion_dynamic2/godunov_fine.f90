@@ -453,12 +453,14 @@ subroutine add_snr_cr(ilevel, r_center)
        ! Impose the CRs source vector from SNRs -----------------------------------------------------  
        call PcrLoann(xx, Pcr_source, r_center, Pcr_0, Rsnr, dx_loc,t,ngrid)
        !---------------------------------------------------------------------------------------------
-         ! Update Pcr vector 
+         ! Update Pcr (and Pgas ?) vector 
        do i=1,ngrid
           do igroup=1,ncr
              !write(*,*) "------------------------------"
              !write(*,*) "uold(ind_cell(i),8+igroup) = ",uold(ind_cell(i),8+igroup)
-             unew(ind_cell(i),8+igroup)=uold(ind_cell(i),8+igroup) + Pcr_source(i)
+             ! We only modify the value of the non-thermal pressure vectors 
+             unew(ind_cell(i),8+igroup)=uold(ind_cell(i),8+igroup) + (gamma_rad(igroup) -1)*Pcr_source(i)
+             unew(ind_cell(i),5) = uold(ind_cell(i),5) + (gamma_rad(igroup) -1)*Pcr_source(i) !+ autre terme (gamma -1)*(P_gas)
              !write(*,*) "Pcr_source(ind_cell(i)) = ",Pcr_source(ind_cell(i)), "Pcr_source(i) = ",Pcr_source(i)
              !write(*,*) "uold(ind_cell(i),8+igroup) = ",uold(ind_cell(i),8+igroup)
              !write(*,*) "------------------------------"
@@ -468,6 +470,7 @@ subroutine add_snr_cr(ilevel, r_center)
        do i=1,ngrid
          do igroup=1,NCR
             uold(ind_cell(i),8+igroup) = unew(ind_cell(i),8+igroup)
+            uold(ind_cell(i),5) = unew(ind_cell(i),5)
          enddo
       enddo
 
