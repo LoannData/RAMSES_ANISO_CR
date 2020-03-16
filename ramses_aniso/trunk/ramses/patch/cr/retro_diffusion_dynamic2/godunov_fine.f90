@@ -372,7 +372,7 @@ subroutine add_snr_cr(ilevel, r_center)
  
      ! ------------------------ Mes variables 
    real(dp),dimension(1:nvector)::Pcr_source
-   real(dp)::Pcr_0, Rsnr
+   real(dp)::Pcr_0, Rsnr!, P_ratio
    real(dp),dimension(1:3)::r_center
    real(dp),dimension(1:nvector,1:ndim),save::xx
    real(dp),dimension(1:twotondim,1:3)::xc
@@ -381,6 +381,8 @@ subroutine add_snr_cr(ilevel, r_center)
  
    Pcr_0 = cr_source_pressure   ! ~ 1e-13 erg/cm^3 
    Rsnr  = box_relative_radius_snr  ! ~ 20 pc for a 200 pc simulation box 
+   !P_ratio = 0. ! Ratio of pressure : Pgas/Pcr (examples : 0 : no gas overpressure, 1 : gas overpressure = pcr overpressure)
+
 
    !write(*,*) "r_center(1) = ",r_center(1), "r_center(2) = ",r_center(2), "r_center(3) = ",r_center(3)
 
@@ -460,7 +462,7 @@ subroutine add_snr_cr(ilevel, r_center)
              !write(*,*) "uold(ind_cell(i),8+igroup) = ",uold(ind_cell(i),8+igroup)
              ! We only modify the value of the non-thermal pressure vectors 
              unew(ind_cell(i),8+igroup)=uold(ind_cell(i),8+igroup) + (gamma_rad(igroup) -1)*Pcr_source(i)
-             unew(ind_cell(i),5) = uold(ind_cell(i),5) + (gamma_rad(igroup) -1)*Pcr_source(i) !+ autre terme (gamma -1)*(P_gas)
+             unew(ind_cell(i),5) = uold(ind_cell(i),5) + (gamma_rad(igroup) -1)*Pcr_source(i) + P_ratio*(gamma -1)*Pcr_source(i) ! We add the gas overpressure also 
              !write(*,*) "Pcr_source(ind_cell(i)) = ",Pcr_source(ind_cell(i)), "Pcr_source(i) = ",Pcr_source(i)
              !write(*,*) "uold(ind_cell(i),8+igroup) = ",uold(ind_cell(i),8+igroup)
              !write(*,*) "------------------------------"

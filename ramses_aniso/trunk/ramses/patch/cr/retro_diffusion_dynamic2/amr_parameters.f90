@@ -91,6 +91,7 @@ module amr_parameters
   real(dp)::T_start_SN = 0.42    ! Time at which SNs can start to explode (in time code unit, defaut value >= 2 tcross ~ 34 Myr)
   logical::dynamic_CR_injection=.false. ! CR dynamic injection through random SNRs explosion module 
   real(dp)::cr_source_pressure = 360000.0d2   ! CR Source pressure ~ 1e-13 erg/cm^3
+  real(dp)::P_ratio = 0.         ! Ratio of pressure : Pgas/Pcr when adding CR sources via SNRs (by default, no gas overpressure)
   real(dp)::box_relative_radius_snr = 0.1 ! Radius of the CR sources in % of the box size ~ 20 pc for a 200 pc simulation box
   real(dp)::epsilon_restartbicg=0.0d0 ! Criterion to restart the value of rzero in BiCGSTAB when rho^2 below some threshold
   integer::slope_limiter_aniso=0 ! Choose your slope_limiter for anisotropic diffusion (0:none,1:MinMod, 2:MonCen)
