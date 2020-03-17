@@ -192,7 +192,12 @@ subroutine set_uold(ilevel)
      !V_galaxy = 1
      V_simu = boxlen**3
      P_occur = tau_SNR*(V_simu/V_galaxy)*dtnew(ilevel)
-     if(myid==1)write (*,*) "PROBABILITY OCCURENCE SN = ",P_occur
+     
+
+     
+
+
+
      !write (*,*) "tau_snr*dt = ",tau_SNR*dtnew(ilevel)
      if (P_occur < 1.) then
         X_occur = 1 - P_occur
@@ -209,6 +214,11 @@ subroutine set_uold(ilevel)
   rz_left   = rz - 1.
   rz_center = rz
   rz_right  = rz +1.
+
+  ! Infos about the exploding SNR (1)
+  if(myid==1) then 
+   write (*,*) "PROBABILITY OCCURENCE SN = ",P_occur
+  endif 
 
   rxx(1) = rx_left
   rxx(2) = rx_center
@@ -235,6 +245,10 @@ subroutine set_uold(ilevel)
                r_center(3) = rzz(iz)
                !write(*,*) "r_center(1) = ",r_center(1), "r_center(2) = ",r_center(2),"r_center(3) = ",r_center(3)
                call add_snr_cr(ilevel, r_center)
+               ! Infos about the exploding SNR (2)
+               if(myid==1) then 
+                  write (*,*) "SN EXPLOSION ! AT ( X = ",r_center(1),", Y = ",r_center(2),", Z = ",r_center(3)," )" 
+               endif 
             enddo
          enddo
       enddo
@@ -462,7 +476,7 @@ subroutine add_snr_cr(ilevel, r_center)
              !write(*,*) "uold(ind_cell(i),8+igroup) = ",uold(ind_cell(i),8+igroup)
              ! We only modify the value of the non-thermal pressure vectors 
              unew(ind_cell(i),8+igroup)=uold(ind_cell(i),8+igroup) + (gamma_rad(igroup) -1)*Pcr_source(i)
-             unew(ind_cell(i),5) = uold(ind_cell(i),5) + (gamma_rad(igroup) -1)*Pcr_source(i) + P_ratio*(gamma -1)*Pcr_source(i) ! We add the gas overpressure also 
+             unew(ind_cell(i),5) = uold(ind_cell(i),5) + (gamma_rad(igroup) -1)*Pcr_source(i) + P_ratio*(gamma - 1)*Pcr_source(i) ! We add the gas overpressure also 
              !write(*,*) "Pcr_source(ind_cell(i)) = ",Pcr_source(ind_cell(i)), "Pcr_source(i) = ",Pcr_source(i)
              !write(*,*) "uold(ind_cell(i),8+igroup) = ",uold(ind_cell(i),8+igroup)
              !write(*,*) "------------------------------"
