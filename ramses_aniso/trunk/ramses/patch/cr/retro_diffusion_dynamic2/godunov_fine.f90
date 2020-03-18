@@ -245,13 +245,13 @@ subroutine set_uold(ilevel)
                r_center(3) = rzz(iz)
                !write(*,*) "r_center(1) = ",r_center(1), "r_center(2) = ",r_center(2),"r_center(3) = ",r_center(3)
                call add_snr_cr(ilevel, r_center)
-               ! Infos about the exploding SNR (2)
-               if(myid==1) then 
-                  write (*,*) "SN EXPLOSION ! AT ( X = ",r_center(1),", Y = ",r_center(2),", Z = ",r_center(3)," )" 
-               endif 
             enddo
          enddo
       enddo
+   ! Infos about the exploding SNR (2)
+   if(myid==1) then 
+      write (*,*) "SN EXPLOSION ! AT ( X = ",rx,", Y = ",ry,", Z = ",rz," )" 
+   endif 
   end if
   !=======================
   endif 
