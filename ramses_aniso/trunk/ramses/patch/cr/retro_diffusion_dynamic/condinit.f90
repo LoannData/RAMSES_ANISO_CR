@@ -203,11 +203,15 @@ subroutine PcrLoann(x, Pcr, r_center, Pcr_0, Rsnr, dx, t, ncell)!(x,v,dx,t,ncell
 
 #if NDIM == 3
                !write(*,*) "xx = ",xx, " yy = ",yy, " zz = ",zz
+               !write(*,*)"r_center(1) = ",r_center(1),", r_center(2) = ",r_center(2),", r_center(3) = ",r_center(3)
+               !write(*,*)"sqrt = ",sqrt((r_center(1) - xx)**2 + (r_center(2) - yy)**2 + (r_center(3) - zz)**2),", Rsnr = ",Rsnr
                if (sqrt((r_center(1) - xx)**2 + (r_center(2) - yy)**2 + (r_center(3) - zz)**2) <= Rsnr) then
                     Pcr(i) = Pcr_0
                else
                     Pcr(i) = 0
                endif 
+
+               if (Pcr(i) > 0.) write(*,*) "Pcr _in = ",Pcr(i)
 
                !write(*,*) "xx = ",xx, "yy = ",yy, "zz = ",zz, "rx_center = ",r_center(1), "ry_center = ",r_center(2), "rz_center = ",r_center(3), "Rsnr = ",Rsnr, "Pcr(i) = ",Pcr(i)
 #endif 

@@ -174,10 +174,13 @@ subroutine set_uold(ilevel)
         CALL RANDOM_NUMBER(rx)
         CALL RANDOM_NUMBER(ry)
         CALL RANDOM_NUMBER(rz)
+        !rx = 0.5d0
+        !ry = 0.5d0 
+        !rz = 0.5d0
      endif
-        !rx = 0.9
-        !ry = 0.5
-        !rz = 0.9
+        rx = 0.95
+        ry = 0.95
+        rz = 0.5
 #ifndef WITHOUTMPI
      call MPI_BCAST(loc_numb,1, MPI_DOUBLE_PRECISION, 0, &
                      & MPI_COMM_WORLD, ierr)
@@ -199,16 +202,27 @@ subroutine set_uold(ilevel)
      else 
         X_occur = 0.
      endif
+
+
+  rx_left   = 0. - (1 - rx)   
+  rx_center = rx 
+  rx_right  = 1. + (rx - 0)
+  ry_left   = 0. - (1 - ry)   
+  ry_center = ry 
+  ry_right  = 1. + (ry - 0)
+  rz_left   = 0. - (1 - rz)   
+  rz_center = rz 
+  rz_right  = 1. + (rz - 0)
         
-  rx_left   = rx - 1.
-  rx_center = rx
-  rx_right  = rx +1.
-  ry_left   = ry - 1.
-  ry_center = ry
-  ry_right  = ry +1.
-  rz_left   = rz - 1.
-  rz_center = rz
-  rz_right  = rz +1.
+  !rx_left   = rx - 1.
+  !rx_center = rx
+  !rx_right  = rx +1.
+  !ry_left   = ry - 1.
+  !ry_center = ry
+  !ry_right  = ry +1.
+  !rz_left   = rz - 1.
+  !rz_center = rz
+  !rz_right  = rz +1.
 
   rxx(1) = rx_left
   rxx(2) = rx_center
@@ -226,7 +240,8 @@ subroutine set_uold(ilevel)
 
   !if (qqchose...)
   !write(*,*) "abs(loc_numb) = ",abs(loc_numb), "X_occur = ",X_occur
-  if (abs(loc_numb) > X_occur) then 
+  !if (abs(loc_numb) > X_occur) then 
+  if (.true.) then 
       do ix=1,3
          do iy=1,3
             do iz=1,3
@@ -238,6 +253,10 @@ subroutine set_uold(ilevel)
             enddo
          enddo
       enddo
+   ! Infos about the exploding SNR (2)
+   if(myid==1) then 
+      write (*,*) "SN EXPLOSION ! AT ( X = ",rx,", Y = ",ry,", Z = ",rz," )" 
+   endif 
   end if
   !=======================
   endif 
@@ -380,6 +399,7 @@ subroutine add_snr_cr(ilevel, r_center)
    integer::ix,iy,iz
  
    Pcr_0 = cr_source_pressure   ! ~ 1e-13 erg/cm^3 
+   !write(*,*) "Pcr_0 = ",Pcr_0
    Rsnr  = box_relative_radius_snr  ! ~ 20 pc for a 200 pc simulation box 
 
    !write(*,*) "r_center(1) = ",r_center(1), "r_center(2) = ",r_center(2), "r_center(3) = ",r_center(3)
@@ -452,24 +472,36 @@ subroutine add_snr_cr(ilevel, r_center)
 #if NCR>0
        ! Impose the CRs source vector from SNRs -----------------------------------------------------  
        call PcrLoann(xx, Pcr_source, r_center, Pcr_0, Rsnr, dx_loc,t,ngrid)
+
+       !do i=1,ngrid
+       !  if (Pcr_source(i) > 0.) write(*,*) "Pcr _out  = ",Pcr_source(i)
+       !enddo 
+
        !---------------------------------------------------------------------------------------------
          ! Update Pcr vector 
        do i=1,ngrid
           do igroup=1,ncr
              !write(*,*) "------------------------------"
              !write(*,*) "uold(ind_cell(i),8+igroup) = ",uold(ind_cell(i),8+igroup)
-             unew(ind_cell(i),8+igroup)=uold(ind_cell(i),8+igroup) + Pcr_source(i)
-             !write(*,*) "Pcr_source(ind_cell(i)) = ",Pcr_source(ind_cell(i)), "Pcr_source(i) = ",Pcr_source(i)
+            !write(*,*) "Pcr_source_before = ",Pcr_source(i)
+            
+             unew(ind_cell(i),8+igroup)=unew(ind_cell(i),8+igroup) + Pcr_source(i)/(gamma_rad(igroup) -1)
+             unew(ind_cell(i),5) = unew(ind_cell(i),5) + Pcr_source(i)/(gamma_rad(igroup) -1)
+             !if (Pcr_source(i) > 0.) write(*,*) "Pcr _out  = ",Pcr_source(i)," uold(ind_cell(i),8+igroup) = ",uold(ind_cell(i),8+igroup), ", unew(ind_cell(i),8+igroup) = ",unew(ind_cell(i),8+igroup)
+             !write(*,*) "Pcr_source_after = ",Pcr_source(i)
+             !if (Pcr_source(1) > 0.) write(*,*) "Pcr = ",Pcr_source(i)
+             !write(*,*) "Pcr_source(i) = ",Pcr_source(i)
              !write(*,*) "uold(ind_cell(i),8+igroup) = ",uold(ind_cell(i),8+igroup)
              !write(*,*) "------------------------------"
           end do 
        end do
 
-       do i=1,ngrid
-         do igroup=1,NCR
-            uold(ind_cell(i),8+igroup) = unew(ind_cell(i),8+igroup)
-         enddo
-      enddo
+       !do i=1,ngrid
+       !  do igroup=1,NCR
+       !     uold(ind_cell(i),8+igroup) = unew(ind_cell(i),8+igroup)
+       !     uold(ind_cell(i),5) = unew(ind_cell(i),5)
+       !  enddo
+       !enddo
 
 #endif
       end do 

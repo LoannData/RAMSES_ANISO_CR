@@ -175,9 +175,10 @@ subroutine set_uold(ilevel)
         CALL RANDOM_NUMBER(ry)
         CALL RANDOM_NUMBER(rz)
      endif
+        ! temporaire
         !rx = 0.9
-        !ry = 0.5
-        !rz = 0.9
+        !ry = 0.9
+        !rz = 0.5
 #ifndef WITHOUTMPI
      call MPI_BCAST(loc_numb,1, MPI_DOUBLE_PRECISION, 0, &
                      & MPI_COMM_WORLD, ierr)
@@ -191,7 +192,7 @@ subroutine set_uold(ilevel)
      !tau_SNR = 1
      !V_galaxy = 1
      V_simu = boxlen**3
-     P_occur = tau_SNR*(V_simu/V_galaxy)*dtnew(ilevel)
+     P_occur = tau_SNR*(V_simu/V_galaxy)*dtnew(ilevel) !(rho_simu/rho_galaxy)  [**(1.5)] 
      
 
      
@@ -236,7 +237,10 @@ subroutine set_uold(ilevel)
 
   !if (qqchose...)
   !write(*,*) "abs(loc_numb) = ",abs(loc_numb), "X_occur = ",X_occur
+
+
   if (abs(loc_numb) > X_occur) then 
+  !if (.true.) then 
       do ix=1,3
          do iy=1,3
             do iz=1,3
@@ -475,20 +479,20 @@ subroutine add_snr_cr(ilevel, r_center)
              !write(*,*) "------------------------------"
              !write(*,*) "uold(ind_cell(i),8+igroup) = ",uold(ind_cell(i),8+igroup)
              ! We only modify the value of the non-thermal pressure vectors 
-             unew(ind_cell(i),8+igroup)=uold(ind_cell(i),8+igroup) + (gamma_rad(igroup) -1)*Pcr_source(i)
-             unew(ind_cell(i),5) = uold(ind_cell(i),5) + (gamma_rad(igroup) -1)*Pcr_source(i) + P_ratio*(gamma - 1)*Pcr_source(i) ! We add the gas overpressure also 
+             unew(ind_cell(i),8+igroup)=unew(ind_cell(i),8+igroup) + Pcr_source(i)/(gamma_rad(igroup) -1)
+             unew(ind_cell(i),5) = unew(ind_cell(i),5) + Pcr_source(i)/(gamma_rad(igroup) -1) + P_ratio*Pcr_source(i)/(gamma - 1) ! We add the gas overpressure also 
              !write(*,*) "Pcr_source(ind_cell(i)) = ",Pcr_source(ind_cell(i)), "Pcr_source(i) = ",Pcr_source(i)
              !write(*,*) "uold(ind_cell(i),8+igroup) = ",uold(ind_cell(i),8+igroup)
              !write(*,*) "------------------------------"
           end do 
        end do
 
-       do i=1,ngrid
-         do igroup=1,NCR
-            uold(ind_cell(i),8+igroup) = unew(ind_cell(i),8+igroup)
-            uold(ind_cell(i),5) = unew(ind_cell(i),5)
-         enddo
-      enddo
+       !do i=1,ngrid
+       !  do igroup=1,NCR
+       !     uold(ind_cell(i),8+igroup) = unew(ind_cell(i),8+igroup)
+       !     uold(ind_cell(i),5) = unew(ind_cell(i),5)
+       !  enddo
+       !enddo
 
 #endif
       end do 
