@@ -417,7 +417,7 @@ subroutine crdiffusion_cg (ilevel,Nsub)
          max_loc=max_loc_all
 #endif
          if(debug_bicg.and.myid==1)write(*,'(A15,es10.2,I5)')'max_loc',max_loc
-         if(   (error/error_ini .le. epsilon_diff).and.&
+         if(   (error/error_ini .le. epsilon_diff).or.&
               &(max_loc         .le. epsilon_diff))continue_loop=.false.
          
  
