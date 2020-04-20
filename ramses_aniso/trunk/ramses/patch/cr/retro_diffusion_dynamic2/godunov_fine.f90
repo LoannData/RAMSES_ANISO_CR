@@ -159,7 +159,81 @@ subroutine set_uold(ilevel)
      call add_pdv_source_terms(ilevel)
   endif
 
-  !write (*,*) "TIME == ",t
+
+
+  ! STATIC CR INJECTION ----------------------
+  ! This routine allows to inject one SNR at a given time in 
+  ! the plasma
+  ! ------------------------------------------
+
+  if ((static_CR_injection .and. T_start_SN <= t) .and. exploded .EQV. .false.) then
+
+   if(myid==1)then
+      rx = rx_cr 
+      ry = ry_cr 
+      rz = rz_cr 
+   endif 
+
+#ifndef WITHOUTMPI
+   call MPI_BCAST(rx      ,1, MPI_DOUBLE_PRECISION, 0, &
+                   & MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(ry      ,1, MPI_DOUBLE_PRECISION, 0, &
+                   & MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(rz      ,1, MPI_DOUBLE_PRECISION, 0, &
+                   & MPI_COMM_WORLD, ierr)
+#endif
+
+
+   rx_left   = rx - 1.
+   rx_center = rx
+   rx_right  = rx +1.
+   ry_left   = ry - 1.
+   ry_center = ry
+   ry_right  = ry +1.
+   rz_left   = rz - 1.
+   rz_center = rz
+   rz_right  = rz +1.
+
+   rxx(1) = rx_left
+   rxx(2) = rx_center
+   rxx(3) = rx_right
+   ryy(1) = ry_left
+   ryy(2) = ry_center
+   ryy(3) = ry_right
+   rzz(1) = rz_left
+   rzz(2) = rz_center
+   rzz(3) = rz_right
+
+   do ix=1,3
+      do iy=1,3
+         do iz=1,3
+            r_center(1) = rxx(ix)
+            r_center(2) = ryy(iy)
+            r_center(3) = rzz(iz)
+            !write(*,*) "r_center(1) = ",r_center(1), "r_center(2) = ",r_center(2),"r_center(3) = ",r_center(3)
+            call add_snr_cr(ilevel, r_center)
+         enddo
+      enddo
+   enddo
+
+   ! Infos about the exploding SNR (2)
+   if(myid==1) then 
+      write (*,*) "SN EXPLOSION ! AT ( X = ",rx,", Y = ",ry,", Z = ",rz," )" 
+   endif 
+
+  exploded = .true.
+
+  endif ! (static_CR_injection) 
+
+
+
+
+
+
+
+  !DYNAMIC SNR INJECTION------------------------------
+  ! This routine allows to dynamically inject SNRs in the 
+  ! plasma. 
   !---------------------------------------------------
   if (dynamic_CR_injection .and. T_start_SN <= t) then
   !========================

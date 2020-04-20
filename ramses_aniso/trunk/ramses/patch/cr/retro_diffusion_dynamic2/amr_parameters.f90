@@ -90,6 +90,11 @@ module amr_parameters
   real(dp)::V_galaxy=2.1d11      ! Volume of the galaxy (in pc)
   real(dp)::T_start_SN = 0.42    ! Time at which SNs can start to explode (in time code unit, defaut value >= 2 tcross ~ 34 Myr)
   logical::dynamic_CR_injection=.false. ! CR dynamic injection through random SNRs explosion module 
+  logical::static_CR_injection=.false.  ! CR static injection through one SNR 
+  logical::exploded = .false.  ! If false and static_CR_injection = true, then explosion at T_start_SN is allowed, otherwise not. 
+  real(dp)::rx_cr = 0.5d0               ! X SNR center position (only if static_SNR_injection == .true.)
+  real(dp)::ry_cr = 0.5d0               ! Y SNR center position (only if static_SNR_injection == .true.)
+  real(dp)::rz_cr = 0.5d0               ! Z SNR center position (only if static_SNR_injection == .true.)
   real(dp)::cr_source_pressure = 360000.0d2   ! CR Source pressure ~ 1e-13 erg/cm^3
   real(dp)::P_ratio = 0.         ! Ratio of pressure : Pgas/Pcr when adding CR sources via SNRs (by default, no gas overpressure)
   real(dp)::box_relative_radius_snr = 0.1 ! Radius of the CR sources in % of the box size ~ 20 pc for a 200 pc simulation box
