@@ -692,8 +692,15 @@ end if
                     unew(ind_cell(i),nvar+2) = -residu_loc(i,i3   ,j3   ,k3  ) ! rzero of PBiCGSTAB
                     if(variable_diff_coeff)then
                      if(alfven_diff_coeff)then
-                         Dcrdiff(ind_cell(i),1)=0.
-                         Dcrdiff(ind_cell(i),2)=0. !Do somethin !!!!!
+
+                        !upass(ind_exist(i),i3,j3,k3,3)=Dpara
+                        !upass(ind_exist(i),i3,j3,k3,4)=kperp ! Dperp=kperp*Dpara
+
+                        Dcrdiff(ind_cell(i),1)=1d0/(1d0/(upass(ind_exist(i),i3,j3,k3,3))+1d0/upass(i,i3,j3,k3,nvar+5))*scale_kappa
+                        Dcrdiff(ind_cell(i),2)=1d0/(1d0/(upass(ind_exist(i),i3,j3,k3,4)*upass(ind_exist(i),i3,j3,k3,3))+1d0/upass(i,i3,j3,k3,nvar+6))*scale_kappa
+
+                         !Dcrdiff(ind_cell(i),1)=0.
+                         !Dcrdiff(ind_cell(i),2)=0. !Do somethin !!!!!
                      else
                          Dcrdiff(ind_cell(i),1)=1d0/(1d0/(DCR/scale_kappa)+1d0/upass(i,i3,j3,k3,nvar+5))*scale_kappa
                          Dcrdiff(ind_cell(i),2)=1d0/(1d0/(k_perp*DCR/scale_kappa)+1d0/upass(i,i3,j3,k3,nvar+6))*scale_kappa
