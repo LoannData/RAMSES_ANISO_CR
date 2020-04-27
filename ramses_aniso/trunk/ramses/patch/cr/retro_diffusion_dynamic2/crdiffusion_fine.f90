@@ -747,14 +747,14 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    integer::k, n, kvalues  
    real(dp)::X_test, Y_test, rho_test, T_test
    real(dp)::calc_value1, calc_value2, calc_value3, betacr 
-   real(dp),dimension(1:5)::mi,ni,mn,nn,Xion,T,rho
-   real(dp),dimension(1:5)::X_train, Y_train, distance  
-   real(dp),dimension(1:5):: f_value1, f_value2, f_value3
+   real(dp),dimension(1:7)::mi,ni,mn,nn,Xion,T,rho
+   real(dp),dimension(1:7)::X_train, Y_train, distance  
+   real(dp),dimension(1:7):: f_value1, f_value2, f_value3
    real(dp),dimension(1:3)::dist_k, x_k, y_k, val1, val2, val3
    
    ! - Variables from RAMSES-ISM ----------------------------
    real(dp)::rho_sim, T_sim, B0_sim, gradPcr, scale_m, scale_n
-   real(dp)::ECR_sim
+   real(dp)::ECR_sim, VT, Linj, theta, Dfg, Dnll
    ! - Variables for RAMSES-ISM -----------------------------
    real(dp)::Gamma_in,rho_i,rho_n,rmi,rmn,chi,rXion,xi_n,rnn,rni,rg
    real(dp)::nuin,Va,Vai,Va_temp, Va_final,Turb
@@ -791,7 +791,7 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    
    
    ! - kNN interpolation algorithm parameters ----------------
-   k = 5  ! Number of nearest neighbors 
+   k = 1  ! Number of nearest neighbors (Only working for k = 1 for instance !!!)
    n = 20 ! Distance ponderation parameter 
    
    ! - Variables from RAMSES-ISM ----------------------------
@@ -802,23 +802,32 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    !!$gradPcr = 1d-29  ! Erg/cm^4
    
    ! - Observationnal and simulation values ------------------
-   T    = [  8000.,     50.,     50.,     30.,     20.]
-   mi   = [ 1.0*mp, 12.0*mp, 12.0*mp, 29.0*mp, 29.0*mp]
-   mn   = [1.21*mp, 1.21*mp, 1.67*mp, 2.12*mp, 2.12*mp]
-   ni   = [  0.007,  2.4e-2,    0.03,    3e-2,    0.01]
-   Xion = [   0.02,    8e-4,    1e-4,    1e-5,    1e-6]
+   !T    = [  8000.,     50.,     50.,     30.,     20.]
+   !mi   = [ 1.0*mp, 12.0*mp, 12.0*mp, 29.0*mp, 29.0*mp]
+   !mn   = [1.21*mp, 1.21*mp, 1.67*mp, 2.12*mp, 2.12*mp]
+   !ni   = [  0.007,  2.4e-2,    0.03,    3e-2,    0.01]
+   !Xion = [   0.02,    8e-4,    1e-4,    1e-5,    1e-6]
+   T    = [1000000.,  8000.,  8000.,     50.,     50.,     30.,     20.]
+   mi   = [ 1.0*mp, 1.0*mp, 1.0*mp, 12.0*mp, 12.0*mp, 29.0*mp, 29.0*mp]
+   mn   = [1.21*mp,1.21*mp,1.21*mp, 1.21*mp, 1.67*mp, 2.12*mp, 2.12*mp]
+   ni   = [   0.01,   99.9,  0.007,  2.4e-2,    0.03,    3e-2,    0.01]
+   Xion = [    0.99,  0.99,   0.02,    8e-4,    1e-4,    1e-5,    1e-6]
    
-   do kvalues=1,5
+   do kvalues=1,7
        rho(kvalues) = (mi(kvalues)*ni(kvalues) + mn(kvalues)*ni(kvalues)*(Xion(kvalues)**(-1) - 1.))
+       !rho(kvalues) = ni(kvalues)/Xion(kvalues)*mi(kvalues)
        X_train(kvalues) = log10(T(kvalues))
        Y_train(kvalues) = log10(rho(kvalues))
+       !write(*,*) "rho = ",rho(kvalues),", log10(T) = ",X_train(kvalues)," log10(rho) = ",Y_train(kvalues)
    end do 
    
    X_test = log10(T_sim)
    Y_test = log10(rho_sim)
+
+   
    
    ! - Algorithm ---------------------------------------------
-   do kvalues=1,5
+   do kvalues=1,7
        f_value1(kvalues) = log10(Xion(kvalues))
        f_value2(kvalues) = mn(kvalues)
        f_value3(kvalues) = mi(kvalues)
@@ -830,6 +839,8 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    rXion = 10.**(calc_value1) ! From log axis to lin axis 
    rmn = calc_value2
    rmi = calc_value3
+
+   !write(*,*) "Tsim = ",T_sim,", rho_sim = ",rho_sim/mp,", Xion = ",rXion
    
    !write(*,*) rXion, rmn/mp, rmi/mp
    
@@ -873,9 +884,35 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    !write(*,*) "Va =",Va, "Vai = ",Vai, "Va_final = ",Va_final
    
    ! - Diffusion coefficients 
-   !write(*,*)  4.*pi*rg*clight/(3.*Turb)
-   betacr = sqrt(1 - (1/(1 + ECR_sim/(mp*clight)**2))**2)
-   kpara = 4.*pi*rg*betacr*clight/(3.*Turb) / scale_kappa
+   !betacr = sqrt(1 - (1/(1 + ECR_sim/(mp*clight)**2))**2)
+   !kpara = 4.*pi*rg*betacr*clight/(3.*Turb) / scale_kappa
+
+   ! - Diffusion coefficients 
+   if (rXion < 0.9) then 
+      !write(*,*)  4.*pi*rg*clight/(3.*Turb)
+      betacr = sqrt(1 - (1/(1 + ECR_sim/(mp*clight)**2))**2)
+      kpara = 4.*pi*rg*betacr*clight/(3.*Turb) / scale_kappa
+      !write(*,*) "Hello !!"
+   else 
+      if (abs(gradPcr) > 1e-50) then 
+         VT = 10*1e5 ! [10 km/s in cm/s]
+         Linj = 50*3.086e18 ! [pc]
+         theta = 9.2e-14*T_sim
+         Dfg  = 0.9*(VT/Va)**(3./2)*(clight*rg**0.5/(abs(gradPcr)*Linj**0.5))
+         Dnll = 0.3*theta**0.25*(clight/Va)**0.5*clight*rg**0.5/((abs(gradPcr))**0.5)
+         !write(*,*) "VT = ",VT,", Linj = ",Linj,", theta = ",theta,", Va_final = ",Va
+         !write(*,*) "Dfg = ",Dfg,", Dnll = ",Dnll,", Xion = ",rXion,", rg = ",rg
+         kpara = (Dfg**(-1) + Dnll**(-1))**(-1) / scale_kappa 
+         !write(*,*) "kpara = ",kpara*scale_kappa 
+      else 
+         kpara = 1e30 / scale_kappa
+      end if 
+   end if 
+
+
+   !write(*,*) "kpara = ",kpara*scale_kappa
+
+      
    
    !write(*,*) "betacr = ",betacr
    !kperp = kpara*Turb**2
@@ -902,7 +939,7 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    ! - Input values -----------------------------------------
    integer::k, n 
    real(dp),intent(in)::X_test, Y_test
-   real(dp),dimension(1:5)::X_train, Y_train, value1, value2, value3, distance 
+   real(dp),dimension(1:7)::X_train, Y_train, value1, value2, value3, distance 
    real(dp),dimension(1:k)::x_k, y_k, val1, val2, val3, dist_k
    
    ! - Output values ----------------------------------------
@@ -921,7 +958,10 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    temp_value3 = 0.0D0 
    
    
-   !write(*,*) "Valeur !! : ",X_test
+   !write(*,*) "Valeur X : ",X_test, "Valeur Y :", log10(10**(Y_test)/1.6726d-24),", k = ",k
+   calc_value1 = 0.
+   calc_value2 = 0.
+   calc_value3 = 0.
    !write(*,*) "Before : ",calc_value1, calc_value2, calc_value3
    
    call selectKNN(X_train, Y_train, X_test, Y_test, k, value1, value2, value3, dist_k, x_k, y_k, val1, val2, val3)
@@ -930,6 +970,7 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    
    if (k.EQ.1) then 
        calc_value1 = val1(1)
+       !write(*,*) "val1 = ",val1(1)
        calc_value2 = val2(1)
        calc_value3 = val3(1)
    end if 
@@ -937,15 +978,17 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
        do ivalues=1,k 
            distinv = distinv + 1./(dist_k(ivalues)**n) 
            temp_value1 = temp_value1 + val1(ivalues)/(dist_k(ivalues)**n)
+           !write(*,*) "temp_value1 = ",temp_value1, ", other = ",val1(ivalues)/(dist_k(ivalues)**n)
            temp_value2 = temp_value2 + val2(ivalues)/(dist_k(ivalues)**n)
            temp_value3 = temp_value3 + val3(ivalues)/(dist_k(ivalues)**n)
        end do 
+       calc_value1 = temp_value1/distinv 
+       calc_value2 = temp_value2/distinv 
+       calc_value3 = temp_value3/distinv
    end if 
    
    
-   calc_value1 = temp_value1/distinv 
-   calc_value2 = temp_value2/distinv 
-   calc_value3 = temp_value3/distinv 
+ 
    
    !write(*,*) "After : ",calc_value1, calc_value2, calc_value3
    
@@ -961,7 +1004,7 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    implicit none
    ! - Input values ------------------------------------------
    integer::k, ivalues 
-   real(dp),dimension(1:5)::X_train, Y_train, value1, value2, value3, distance  
+   real(dp),dimension(1:7)::X_train, Y_train, value1, value2, value3, distance  
    real(dp)::X_test, Y_test
    
    ! - Output values ----------------------------------------- 
@@ -970,6 +1013,7 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    
    call getDistance(X_train, Y_train, X_test, Y_test, value1, value2, value3, distance)
    
+   !write(*,*) "========================================================================"
    do ivalues=1,k 
        dist_k(ivalues) = distance(ivalues)
        x_k(ivalues) = X_train(ivalues)
@@ -978,8 +1022,8 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
        val2(ivalues) = value2(ivalues)
        val3(ivalues) = value3(ivalues)
    
-       !write(*,*) dist_k(ivalues)
-       !write(*,*) val1(ivalues), val2(ivalues), val3(ivalues)
+       !write(*,*) "dist_k = ",dist_k(ivalues)," X_train = ", X_train(ivalues),", Y_train = ",Y_train(ivalues), "Xval = ",val1(ivalues)
+       !write(*,*) "vals = ",val1(ivalues), val2(ivalues), val3(ivalues)
    end do 
    
    end subroutine selectKNN
@@ -992,15 +1036,15 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    implicit none 
    ! - Input values ------------------------------------------
    integer::ivalues,jvalues
-   real(dp),dimension(1:5)::X_train, Y_train, value1, value2, value3  
+   real(dp),dimension(1:7)::X_train, Y_train, value1, value2, value3  
    real(dp)::X_test,Y_test
    
    ! - Output values -----------------------------------------
-   real(dp),dimension(1:5)::distance
-   integer,dimension(1:5)::order 
+   real(dp),dimension(1:7)::distance
+   integer,dimension(1:7)::order 
    real(dp)::buffer_value
    
-   do ivalues = 1,5 
+   do ivalues = 1,7 
        distance(ivalues) = sqrt((X_train(ivalues)-X_test)**2. + (Y_train(ivalues)-Y_test)**2.)
        !write(*,*) ivalues," : ",distance(ivalues)
        !write(*,*) "Tsim = ",X_test,"  Ttrain = ",X_train(ivalues)
@@ -1009,8 +1053,8 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
        order(ivalues) = ivalues
    end do
    
-   do ivalues = 1,5
-       do jvalues = 1,5
+   do ivalues = 1,7
+       do jvalues = 1,7
            if (ivalues.NE.jvalues) then 
                if ((distance(ivalues) <= distance(jvalues)).AND.(ivalues > jvalues)) then
    
@@ -1029,6 +1073,18 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
                    buffer_value = order(ivalues)
                    order(ivalues) = order(jvalues)
                    order(jvalues) = buffer_value
+
+                   buffer_value = value1(ivalues)
+                   value1(ivalues) = value1(jvalues)
+                   value1(jvalues) = buffer_value
+
+                   buffer_value = value2(ivalues)
+                   value2(ivalues) = value2(jvalues)
+                   value2(jvalues) = buffer_value
+
+                   buffer_value = value3(ivalues)
+                   value3(ivalues) = value3(jvalues)
+                   value3(jvalues) = buffer_value
                end if 
            endif
        end do

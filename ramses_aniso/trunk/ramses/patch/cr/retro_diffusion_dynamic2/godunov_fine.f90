@@ -166,6 +166,8 @@ subroutine set_uold(ilevel)
   ! the plasma
   ! ------------------------------------------
 
+  !write(*,*) "t = ",t
+
   if ((static_CR_injection .and. T_start_SN <= t) .and. (exploded .NEQV. .true.)) then
 
    if(myid==1)then
