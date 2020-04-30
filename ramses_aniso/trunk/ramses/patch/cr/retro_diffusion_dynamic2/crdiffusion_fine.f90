@@ -750,7 +750,7 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    real(dp),dimension(1:7)::mi,ni,mn,nn,Xion,T,rho
    real(dp),dimension(1:7)::X_train, Y_train, distance  
    real(dp),dimension(1:7):: f_value1, f_value2, f_value3
-   real(dp),dimension(1:3)::dist_k, x_k, y_k, val1, val2, val3
+   real(dp),dimension(1:7)::dist_k, x_k, y_k, val1, val2, val3
    
    ! - Variables from RAMSES-ISM ----------------------------
    real(dp)::rho_sim, T_sim, B0_sim, gradPcr, scale_m, scale_n
@@ -782,7 +782,7 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    
    
    !write(*,*) "Bnorm_inside_before = ",B0_sim
-   B0_sim  = B0_sim  * sqrt(4.*pi*scale_d*scale_v**2 )
+   B0_sim  = B0_sim  * sqrt(4.*pi*scale_d*scale_v**2)
    !write(*,*) "pi = ",pi," scale_d = ",scale_d," scale_v = ",scale_v
    !write(*,*) "Bnorm_inside_after = ",B0_sim
    
@@ -791,7 +791,7 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    
    
    ! - kNN interpolation algorithm parameters ----------------
-   k = 1  ! Number of nearest neighbors (Only working for k = 1 for instance !!!)
+   k = 7  ! Number of nearest neighbors (Only working for k = 1 for instance !!!)
    n = 20 ! Distance ponderation parameter 
    
    ! - Variables from RAMSES-ISM ----------------------------
@@ -841,73 +841,127 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    rmi = calc_value3
 
    !write(*,*) "Tsim = ",T_sim,", rho_sim = ",rho_sim/mp,", Xion = ",rXion
+   !write(*,*) "==================================================================================="
    
    !write(*,*) rXion, rmn/mp, rmi/mp
-   
-   ! - Basic calculations 
-   chi   = (rmn/rmi)*(rXion**(-1) - 1.) 
-   rho_n = rho_sim/(1. + chi**(-1))
-   rho_i = chi**(-1)/(1. + chi**(-1))*rho_sim
-   xi_n  = 1./(1 + chi**(-1))
-   rnn   = rho_n/rmn 
-   rni   = rho_i/rmi 
-   rg    = ECR_sim/(e*B0_sim)
-   
-   !write (*,*) "ECR_sim = ",ECR_sim," e = ",e," B0_sim = ",B0_sim 
-   
-   ! - nu_in and Gamma_in calculation 
-   Gamma_in = 0.
-   nuin  = 2*rnn*8.4d-9*(T_sim/1.d4)**(0.4) 
-   Va  = B0_sim/sqrt(4.*pi*rho_sim)
-   Vai = B0_sim/sqrt(4.*pi*rho_i)
-   Va_temp = B0_sim/sqrt(4.*pi*rho_i)
-   !if (ECR_sim < e*B0_sim*Vai/nuin) then 
-   !    Gamma_in = - nuin/2. 
-   !    Va_final = Vai 
-   !end if 
-   Va_temp = B0_sim/(4.*pi*rho_sim)
-   !if (ECR_sim > e*B0*Va*chi/nuin) then 
-   !    Gamma_in = -xi_n*Va**2*e**2*B0_sim**2*ECR_sim**(-2)/(2.*chi*nuin)
-   !    Va_final = Va
-   !end if 
-   
-   Gamma_in = -nuin/2.
-   Va_final = Vai
-   
-   ! - Energy density of waves (Turbulence level)
-   Turb = abs(Va_final*abs(gradPcr)/(2.*Gamma_in)/(B0_sim**2/(8.*pi)))
-   !write(*,*) "Turb = ",Turb," Va_final = ",Va_final," gradPcr = ",gradPcr," Gamma_in = ",Gamma_in," B0_sim = ",B0_sim," pi = ",pi
-   !write(*,*) Turb
-   
-   !write(*,*) rnn, rho_n, rmn/mp
-   !write(*,*) e*B0*Va*chi/nuin/GeV, ECR_sim/GeV, e*B0_sim*Vai/nuin/GeV 
-   !write(*,*) "Va =",Va, "Vai = ",Vai, "Va_final = ",Va_final
-   
-   ! - Diffusion coefficients 
-   !betacr = sqrt(1 - (1/(1 + ECR_sim/(mp*clight)**2))**2)
-   !kpara = 4.*pi*rg*betacr*clight/(3.*Turb) / scale_kappa
 
-   ! - Diffusion coefficients 
-   if (rXion < 0.9) then 
-      !write(*,*)  4.*pi*rg*clight/(3.*Turb)
-      betacr = sqrt(1 - (1/(1 + ECR_sim/(mp*clight)**2))**2)
-      kpara = 4.*pi*rg*betacr*clight/(3.*Turb) / scale_kappa
-      !write(*,*) "Hello !!"
+
+   ! Case where we are in young SNRs -> Dself = Dbohm 
+   rg    = ECR_sim/(e*B0_sim)
+   if (T_sim > 1.0D6) then 
+
+      kpara = 4*clight/(3*3.14720)*rg / scale_kappa 
+      kperp = kpara*1.d-2 ! In order to avoid scheme divergences
+   
+   ! If we are outside young SNRs 
    else 
-      if (abs(gradPcr) > 1e-50) then 
-         VT = 10*1e5 ! [10 km/s in cm/s]
-         Linj = 50*3.086e18 ! [pc]
-         theta = 9.2e-14*T_sim
-         Dfg  = 0.9*(VT/Va)**(3./2)*(clight*rg**0.5/(abs(gradPcr)*Linj**0.5))
-         Dnll = 0.3*theta**0.25*(clight/Va)**0.5*clight*rg**0.5/((abs(gradPcr))**0.5)
-         !write(*,*) "VT = ",VT,", Linj = ",Linj,", theta = ",theta,", Va_final = ",Va
-         !write(*,*) "Dfg = ",Dfg,", Dnll = ",Dnll,", Xion = ",rXion,", rg = ",rg
-         kpara = (Dfg**(-1) + Dnll**(-1))**(-1) / scale_kappa 
-         !write(*,*) "kpara = ",kpara*scale_kappa 
+      ! In fully ionized phases 
+      if (rXion > 0.9) then 
+         if (abs(gradPcr) > 1e-50) then
+            Va  = B0_sim/sqrt(4.*pi*rho_sim)
+            VT = 10*1e5 ! [10 km/s in cm/s]
+            Linj = 50*3.086e18 ! [pc]
+            theta = 9.2e-14*T_sim
+            Dfg  = 0.9*(VT/Va)**(3./2)*(clight*rg**0.5/(abs(gradPcr)*Linj**0.5))
+            Dnll = 0.3*theta**0.25*(clight/Va)**0.5*clight*rg**0.5/((abs(gradPcr))**0.5)
+            !write(*,*) "VT = ",VT,", Linj = ",Linj,", theta = ",theta,", Va_final = ",Va
+            !write(*,*) "Dfg = ",Dfg,", Dnll = ",Dnll,", Xion = ",rXion,", rg = ",rg
+            kpara = (Dfg**(-1) + Dnll**(-1))**(-1) / scale_kappa 
+            kperp = kpara*1.d-2 ! In order to avoid scheme divergences
+         else 
+            kpara = 1e30 / scale_kappa
+            kperp = kpara*1.d-2 ! In order to avoid scheme divergences
+         end if 
+      ! In partially ionized phases
       else 
-         kpara = 1e30 / scale_kappa
+         ! - Basic calculations 
+         chi   = (rmn/rmi)*(rXion**(-1) - 1.) 
+         rho_n = rho_sim/(1. + chi**(-1))
+         rho_i = chi**(-1)/(1. + chi**(-1))*rho_sim
+         xi_n  = 1./(1 + chi**(-1))
+         rnn   = rho_n/rmn 
+         rni   = rho_i/rmi 
+         
+
+         ! - nu_in and Gamma_in calculation 
+         Gamma_in = 0.
+         nuin  = 2*rnn*8.4d-9*(T_sim/1.d4)**(0.4) 
+         Vai = B0_sim/sqrt(4.*pi*rho_i)
+         Gamma_in = -nuin/2.
+         Va_final = Vai
+         
+         ! - Energy density of waves (Turbulence level)
+         Turb = abs(Va_final*abs(gradPcr)/(2.*Gamma_in)/(B0_sim**2/(8.*pi)))
+         betacr = sqrt(1 - (1/(1 + ECR_sim/(mp*clight)**2))**2)
+
+         ! - Self-generated diffusion coefficient 
+         kpara = 4.*pi*rg*betacr*clight/(3.*Turb) / scale_kappa
+         kperp = kpara*1.d-2 ! In order to avoid scheme divergences 
+
+         !write(*,*) "kpara = ",kpara*scale_kappa
       end if 
    end if 
+
+
+
+   
+
+
+
+
+
+
+   
+   ! - Basic calculations 
+   !chi   = (rmn/rmi)*(rXion**(-1) - 1.) 
+   !rho_n = rho_sim/(1. + chi**(-1))
+   !rho_i = chi**(-1)/(1. + chi**(-1))*rho_sim
+   !xi_n  = 1./(1 + chi**(-1))
+   !rnn   = rho_n/rmn 
+   !rni   = rho_i/rmi 
+   !rg    = ECR_sim/(e*B0_sim)
+   
+   ! - nu_in and Gamma_in calculation 
+   !Gamma_in = 0.
+   !nuin  = 2*rnn*8.4d-9*(T_sim/1.d4)**(0.4) 
+   !Va  = B0_sim/sqrt(4.*pi*rho_sim)
+   !Vai = B0_sim/sqrt(4.*pi*rho_i)
+   !Va_temp = B0_sim/sqrt(4.*pi*rho_i)
+   !Va_temp = B0_sim/(4.*pi*rho_sim)
+
+   !Gamma_in = -nuin/2.
+   !Va_final = Vai
+   
+   ! - Energy density of waves (Turbulence level)
+   !Turb = abs(Va_final*abs(gradPcr)/(2.*Gamma_in)/(B0_sim**2/(8.*pi)))
+   
+
+
+   !! - Diffusion coefficients 
+   !!betacr = sqrt(1 - (1/(1 + ECR_sim/(mp*clight)**2))**2)
+   !!kpara = 4.*pi*rg*betacr*clight/(3.*Turb) / scale_kappa
+
+   ! - Diffusion coefficients 
+   !if (rXion < 0.9) then 
+   !   !write(*,*)  4.*pi*rg*clight/(3.*Turb)
+   !   betacr = sqrt(1 - (1/(1 + ECR_sim/(mp*clight)**2))**2)
+   !   kpara = 4.*pi*rg*betacr*clight/(3.*Turb) / scale_kappa
+   !   !write(*,*) "Hello !!"
+   !else 
+   !   if (abs(gradPcr) > 1e-50) then 
+   !      VT = 10*1e5 ! [10 km/s in cm/s]
+   !      Linj = 50*3.086e18 ! [pc]
+   !      theta = 9.2e-14*T_sim
+   !      Dfg  = 0.9*(VT/Va)**(3./2)*(clight*rg**0.5/(abs(gradPcr)*Linj**0.5))
+  !       Dnll = 0.3*theta**0.25*(clight/Va)**0.5*clight*rg**0.5/((abs(gradPcr))**0.5)
+   !      !write(*,*) "VT = ",VT,", Linj = ",Linj,", theta = ",theta,", Va_final = ",Va
+   !      !write(*,*) "Dfg = ",Dfg,", Dnll = ",Dnll,", Xion = ",rXion,", rg = ",rg
+   !      kpara = (Dfg**(-1) + Dnll**(-1))**(-1) / scale_kappa 
+   !      !write(*,*) "kpara = ",kpara*scale_kappa 
+   !   else 
+   !      kpara = 1e30 / scale_kappa
+   !   end if 
+   !end if 
 
 
    !write(*,*) "kpara = ",kpara*scale_kappa
@@ -916,7 +970,7 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    
    !write(*,*) "betacr = ",betacr
    !kperp = kpara*Turb**2
-   kperp = kpara*1.d-2 ! In order to avoid scheme divergences 
+   
    
    !write(*,*) "-----------------------------------------------------------------"
    !write(*,*) "Tested values : rho = ",rho_sim," g.cm^-3, T = ",T_sim," Kelvin" 
@@ -933,14 +987,14 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    !###########################################################
    !###########################################################
    !###########################################################
-   subroutine getValue_linear(X_train, Y_train, distance, value1, value2, value3, X_test, Y_test, k , dist_k, x_k, y_k, val1, val2, val3, n, calc_value1, calc_value2, calc_value3)
+   subroutine getValue_linear(X_train, Y_train, distance, value1, value2, value3, X_test, Y_test, k , dist_kk, x_k, y_k, val1, val2, val3, n, calc_value1, calc_value2, calc_value3)
        use cooling_module
    implicit none
    ! - Input values -----------------------------------------
    integer::k, n 
    real(dp),intent(in)::X_test, Y_test
    real(dp),dimension(1:7)::X_train, Y_train, value1, value2, value3, distance 
-   real(dp),dimension(1:k)::x_k, y_k, val1, val2, val3, dist_k
+   real(dp),dimension(1:k)::x_k, y_k, val1, val2, val3, dist_kk
    
    ! - Output values ----------------------------------------
    real(dp)::calc_value1, calc_value2, calc_value3 
@@ -964,7 +1018,11 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    calc_value3 = 0.
    !write(*,*) "Before : ",calc_value1, calc_value2, calc_value3
    
-   call selectKNN(X_train, Y_train, X_test, Y_test, k, value1, value2, value3, dist_k, x_k, y_k, val1, val2, val3)
+   call selectKNN(X_train, Y_train, X_test, Y_test, k, value1, value2, value3, dist_kk, x_k, y_k, val1, val2, val3)
+
+   !do ivalues=1,k 
+   !   write(*,*) "dist_k = ",dist_kk(ivalues)
+   !end do 
    
    
    
@@ -976,11 +1034,12 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    end if 
    if (k > 1) then 
        do ivalues=1,k 
-           distinv = distinv + 1./(dist_k(ivalues)**n) 
-           temp_value1 = temp_value1 + val1(ivalues)/(dist_k(ivalues)**n)
+           distinv = distinv + 1./(dist_kk(ivalues)**n) 
+           temp_value1 = temp_value1 + val1(ivalues)/(dist_kk(ivalues)**n)
            !write(*,*) "temp_value1 = ",temp_value1, ", other = ",val1(ivalues)/(dist_k(ivalues)**n)
-           temp_value2 = temp_value2 + val2(ivalues)/(dist_k(ivalues)**n)
-           temp_value3 = temp_value3 + val3(ivalues)/(dist_k(ivalues)**n)
+           !write(*,*) "dist_k = ",dist_kk(ivalues)
+           temp_value2 = temp_value2 + val2(ivalues)/(dist_kk(ivalues)**n)
+           temp_value3 = temp_value3 + val3(ivalues)/(dist_kk(ivalues)**n)
        end do 
        calc_value1 = temp_value1/distinv 
        calc_value2 = temp_value2/distinv 
@@ -1003,7 +1062,7 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
        use cooling_module
    implicit none
    ! - Input values ------------------------------------------
-   integer::k, ivalues 
+   integer::k, iivalues 
    real(dp),dimension(1:7)::X_train, Y_train, value1, value2, value3, distance  
    real(dp)::X_test, Y_test
    
@@ -1014,13 +1073,16 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    call getDistance(X_train, Y_train, X_test, Y_test, value1, value2, value3, distance)
    
    !write(*,*) "========================================================================"
-   do ivalues=1,k 
-       dist_k(ivalues) = distance(ivalues)
-       x_k(ivalues) = X_train(ivalues)
-       y_k(ivalues) = Y_train(ivalues)
-       val1(ivalues) = value1(ivalues)
-       val2(ivalues) = value2(ivalues)
-       val3(ivalues) = value3(ivalues)
+   !write(*,*) "k = ",k
+   do iivalues=1,k 
+       dist_k(iivalues) = distance(iivalues)
+       x_k(iivalues)    = X_train(iivalues)
+       y_k(iivalues)    = Y_train(iivalues)
+       val1(iivalues)   = value1(iivalues)
+       val2(iivalues)   = value2(iivalues)
+       val3(iivalues)   = value3(iivalues)
+
+       !write(*,*) "sub dist_k = ",distance(ivalues)
    
        !write(*,*) "dist_k = ",dist_k(ivalues)," X_train = ", X_train(ivalues),", Y_train = ",Y_train(ivalues), "Xval = ",val1(ivalues)
        !write(*,*) "vals = ",val1(ivalues), val2(ivalues), val3(ivalues)
