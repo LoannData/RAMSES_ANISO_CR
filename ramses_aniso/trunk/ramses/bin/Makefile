@@ -45,7 +45,7 @@ DEFINES = -DNVECTOR=$(NVECTOR) -DNDIM=$(NDIM) -DNPRE=$(NPRE) -DNENER=$(NENER) -D
 #FFLAGS = -cpp $(DEFINES) -DWITHOUTMPI -fpe0 -traceback -O0
 
 # --- MPI, gfortran syntax ------------------------------
-F90 = mpif90 -frecord-marker=4 -O3 -ffree-line-length-none -g -fbacktrace 
+F90 = mpif90 -frecord-marker=4 -O3 -ffree-line-length-none #-g -fbacktrace 
 FFLAGS = -x f95-cpp-input $(DEFINES)
 
 # --- MPI, gfortran DEBUG syntax ------------------------------ 
