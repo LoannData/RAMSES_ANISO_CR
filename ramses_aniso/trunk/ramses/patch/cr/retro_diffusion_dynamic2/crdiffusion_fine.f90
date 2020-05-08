@@ -739,6 +739,7 @@ end subroutine crdifffine1
 !###########################################################
 subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    use cooling_module
+   use hydro_parameters
    implicit none
    ! - Some constants ---------------------------------------
    real::mp, e, GeV, pi 
@@ -747,10 +748,10 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    integer::k, n, kvalues  
    real(dp)::X_test, Y_test, rho_test, T_test
    real(dp)::calc_value1, calc_value2, calc_value3, betacr 
-   real(dp),dimension(1:6)::mi,ni,mn,nn,Xion,T,rho
-   real(dp),dimension(1:6)::X_train, Y_train, distance  
-   real(dp),dimension(1:6):: f_value1, f_value2, f_value3
-   real(dp),dimension(1:6)::dist_k, x_k, y_k, val1, val2, val3
+   real(dp),dimension(1:7)::mi,ni,mn,nn,Xion,T,rho
+   real(dp),dimension(1:7)::X_train, Y_train, distance  
+   real(dp),dimension(1:7):: f_value1, f_value2, f_value3
+   real(dp),dimension(1:7)::dist_k, x_k, y_k, val1, val2, val3
    
    ! - Variables from RAMSES-ISM ----------------------------
    real(dp)::rho_sim, T_sim, B0_sim, gradPcr, scale_m, scale_n
@@ -791,7 +792,7 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    
    
    ! - kNN interpolation algorithm parameters ----------------
-   k = 6  ! Number of nearest neighbors (Only working for k = 1 for instance !!!)
+   k = 7  ! Number of nearest neighbors (Only working for k = 1 for instance !!!)
    n = 20 ! Distance ponderation parameter 
    
    ! - Variables from RAMSES-ISM ----------------------------
@@ -807,13 +808,19 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    !mn   = [1.21*mp, 1.21*mp, 1.67*mp, 2.12*mp, 2.12*mp]
    !ni   = [  0.007,  2.4e-2,    0.03,    3e-2,    0.01]
    !Xion = [   0.02,    8e-4,    1e-4,    1e-5,    1e-6]
-   T    = [1000000.,  8000.,     50.,     50.,     30.,     20.]
-   mi   = [ 1.0*mp, 1.0*mp, 12.0*mp, 12.0*mp, 29.0*mp, 29.0*mp]
-   mn   = [1.21*mp,1.21*mp, 1.21*mp, 1.67*mp, 2.12*mp, 2.12*mp]
-   ni   = [   0.01,  0.007,  2.4e-2,    0.03,    3e-2,    0.01]
-   Xion = [    0.99,  0.02,    8e-4,    1e-4,    1e-5,    1e-6]
+   !-----------------------------------------------------------
+   !T    = [1000000.,  8000.,     50.,     50.,     30.,     20.]
+   !mi   = [ 1.0*mp, 1.0*mp, 12.0*mp, 12.0*mp, 29.0*mp, 29.0*mp]
+   !mn   = [1.21*mp,1.21*mp, 1.21*mp, 1.67*mp, 2.12*mp, 2.12*mp]
+   !ni   = [   0.01,  0.007,  2.4e-2,    0.03,    3e-2,    0.01]
+   !Xion = [    0.99,  0.02,    8e-4,    1e-4,    1e-5,    1e-6]
+   T    = [1000000.,  10000., 8000.,     50.,     50.,     30.,     20.]
+   mi   = [ 1.0*mp, 1.0*mp, 1.0*mp, 12.0*mp, 12.0*mp, 29.0*mp, 29.0*mp]
+   mn   = [1.21*mp, 1.21*mp, 1.21*mp, 1.21*mp, 1.67*mp, 2.12*mp, 2.12*mp]
+   ni   = [   0.01,  99., 0.007,  2.4e-2,    0.03,    3e-2,    0.01]
+   Xion = [    0.99, 0.99, 0.02,    8e-4,    1e-4,    1e-5,    1e-6]
    
-   do kvalues=1,6
+   do kvalues=1,7
        rho(kvalues) = (mi(kvalues)*ni(kvalues) + mn(kvalues)*ni(kvalues)*(Xion(kvalues)**(-1) - 1.))
        !rho(kvalues) = ni(kvalues)/Xion(kvalues)*mi(kvalues)
        X_train(kvalues) = log10(T(kvalues))
@@ -827,7 +834,7 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    
    
    ! - Algorithm ---------------------------------------------
-   do kvalues=1,6
+   do kvalues=1,7
        f_value1(kvalues) = log10(Xion(kvalues))
        f_value2(kvalues) = mn(kvalues)
        f_value3(kvalues) = mi(kvalues)
@@ -850,7 +857,9 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    rg    = ECR_sim/(e*B0_sim)
    if (T_sim > 1.0D6) then 
 
-      kpara = 4*clight/(3*3.14720)*rg / scale_kappa 
+      !kpara = 4*clight/(3*3.14720)*rg / scale_kappa 
+      kpara = Dcr / 10. / scale_kappa 
+      !write(*,*) "Kappa = ",kpara
       kperp = kpara*1.d-2 ! In order to avoid scheme divergences
    
    ! If we are outside young SNRs 
@@ -993,7 +1002,7 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    ! - Input values -----------------------------------------
    integer::k, n 
    real(dp),intent(in)::X_test, Y_test
-   real(dp),dimension(1:6)::X_train, Y_train, value1, value2, value3, distance 
+   real(dp),dimension(1:7)::X_train, Y_train, value1, value2, value3, distance 
    real(dp),dimension(1:k)::x_k, y_k, val1, val2, val3, dist_kk
    
    ! - Output values ----------------------------------------
@@ -1063,7 +1072,7 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    implicit none
    ! - Input values ------------------------------------------
    integer::k, iivalues 
-   real(dp),dimension(1:6)::X_train, Y_train, value1, value2, value3, distance  
+   real(dp),dimension(1:7)::X_train, Y_train, value1, value2, value3, distance  
    real(dp)::X_test, Y_test
    
    ! - Output values ----------------------------------------- 
@@ -1098,15 +1107,15 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
    implicit none 
    ! - Input values ------------------------------------------
    integer::ivalues,jvalues
-   real(dp),dimension(1:6)::X_train, Y_train, value1, value2, value3  
+   real(dp),dimension(1:7)::X_train, Y_train, value1, value2, value3  
    real(dp)::X_test,Y_test
    
    ! - Output values -----------------------------------------
-   real(dp),dimension(1:6)::distance
-   integer,dimension(1:6)::order 
+   real(dp),dimension(1:7)::distance
+   integer,dimension(1:7)::order 
    real(dp)::buffer_value
    
-   do ivalues = 1,6 
+   do ivalues = 1,7 
        distance(ivalues) = sqrt((X_train(ivalues)-X_test)**2. + (Y_train(ivalues)-Y_test)**2.)
        !write(*,*) ivalues," : ",distance(ivalues)
        !write(*,*) "Tsim = ",X_test,"  Ttrain = ",X_train(ivalues)
@@ -1115,8 +1124,8 @@ subroutine subgridcr_diffusion(rho_sim, T_sim, B0_sim, gradPcr, kpara, kperp)
        order(ivalues) = ivalues
    end do
    
-   do ivalues = 1,6
-       do jvalues = 1,6
+   do ivalues = 1,7
+       do jvalues = 1,7
            if (ivalues.NE.jvalues) then 
                if ((distance(ivalues) <= distance(jvalues)).AND.(ivalues > jvalues)) then
    
