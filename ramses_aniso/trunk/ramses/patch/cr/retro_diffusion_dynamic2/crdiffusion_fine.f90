@@ -697,7 +697,8 @@ end if
                         !upass(ind_exist(i),i3,j3,k3,4)=kperp ! Dperp=kperp*Dpara
 
                         Dcrdiff(ind_cell(i),1)=1d0/(1d0/(upass(ind_exist(i),i3,j3,k3,3))+1d0/upass(i,i3,j3,k3,nvar+5))*scale_kappa
-                        Dcrdiff(ind_cell(i),2)=1d0/(1d0/(upass(ind_exist(i),i3,j3,k3,4)*upass(ind_exist(i),i3,j3,k3,3))+1d0/upass(i,i3,j3,k3,nvar+6))*scale_kappa
+                        Dcrdiff(ind_cell(i),2)=MAX(upass(ind_exist(i),i3,j3,k3,4)*upass(ind_exist(i),i3,j3,k3,3), upass(i,i3,j3,k3,nvar+6))*scale_kappa
+                        !Dcrdiff(ind_cell(i),2)=1d0/(1d0/(upass(ind_exist(i),i3,j3,k3,4)*upass(ind_exist(i),i3,j3,k3,3))+1d0/upass(i,i3,j3,k3,nvar+6))*scale_kappa
 
                          !Dcrdiff(ind_cell(i),1)=0.
                          !Dcrdiff(ind_cell(i),2)=0. !Do somethin !!!!!
