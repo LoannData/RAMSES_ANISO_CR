@@ -705,6 +705,7 @@ end if
                      else
                          Dcrdiff(ind_cell(i),1)=1d0/(1d0/(DCR/scale_kappa)+1d0/upass(i,i3,j3,k3,nvar+5))*scale_kappa
                          Dcrdiff(ind_cell(i),2)=1d0/(1d0/(k_perp*DCR/scale_kappa)+1d0/upass(i,i3,j3,k3,nvar+6))*scale_kappa
+                         ! Tester avec le cas MAX(Dperp, Dself_perp)
                          
                          !if (DCR > uloc(i,i3,j3,k3,nvar+5)*scale_kappa) then
                          !write(*,*) "DCR = ",DCR," Dself,par = ",uloc(i,i3,j3,k3,nvar+5)*scale_kappa
