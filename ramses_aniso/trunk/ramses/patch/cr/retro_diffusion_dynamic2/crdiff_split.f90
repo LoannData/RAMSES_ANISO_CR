@@ -111,7 +111,7 @@ subroutine crdiff_split(uin,flux,dx,dy,dz,dt,ngrid,compute,fdx,igroup) !YD:test
                Dpara(l,i,j,k)=uin(l,i,j,k,3)
                kperp(l,i,j,k)=max(uin(l,i,j,k,4),k_perp)
             end if
-           !if(streaming_diffusion) Vstr(l,i,j,k)=uin(l,i,j,k,7)
+           if(streaming_diffusion) Vstr(l,i,j,k)=uin(l,i,j,k,3)
            if(compute==4)Ecr(l,i,j,k)=uin(l,i,j,k,2)
            Ecr0 (l,i,j,k)=uin(l,i,j,k,igroup) ! store the initial value of the energy
                                               ! must be available at all iterations for slope limiter
