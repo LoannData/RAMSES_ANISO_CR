@@ -237,14 +237,14 @@ subroutine crdifffine1(ind_grid,ncache,ilevel,compute,igroup)
            endif
         end do
 
-        if(streaming_diffusion)then
-           do i=1,nexist
-              uloc(ind_exist(i),i3,j3,k3,5)=divu(ind_cell(i))              
-           enddo
-           do i=1,nbuffer
-              uloc(ind_nexist(i),i3,j3,k3,5)=uloc(ind_nexist(i),i3,j3,k3,igroup)
-           enddo
-        endif
+        !if(streaming_diffusion)then
+        !   do i=1,nexist
+        !      uloc(ind_exist(i),i3,j3,k3,5)=divu(ind_cell(i))              
+        !  enddo
+        !   do i=1,nbuffer
+        !     uloc(ind_nexist(i),i3,j3,k3,5)=uloc(ind_nexist(i),i3,j3,k3,igroup)
+        !   enddo
+        !endif
 
         if(alfven_diff_coeff)then
            ! Compute Alfvenic Mach number = V/V_A and store it into uloc(:,3)
